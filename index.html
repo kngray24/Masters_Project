@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lightweight PM System</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <header><h1>Lightweight IT Project Management</h1></header>
+  <main class="container">
+    <section class="new-task">
+      <h2>Create Task</h2>
+      <input id="title" placeholder="Task title" />
+      <textarea id="desc" placeholder="Description"></textarea>
+      <select id="priority">
+        <option value="Low">Low</option>
+        <option value="Medium" selected>Medium</option>
+        <option value="High">High</option>
+      </select>
+      <input id="due" type="date" />
+      <button id="addBtn">Add Task</button>
+    </section>
+    <section class="tasks">
+      <h2>Tasks</h2>
+      <div id="taskList"></div>
+    </section>
+    <section class="dashboard">
+      <h2>Dashboard</h2>
+      <p id="stats">Loading...</p>
+    </section>
+  </main>
+  <footer>Prototype built for MS Project - Lightweight PM System</footer>
+  <script src="app.js"></script>
+</body>
+</html>
