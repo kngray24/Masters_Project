@@ -84,7 +84,7 @@
         /* --- Sidebar & Main Layout --- */
         .main-layout {
             display: flex;
-            height: calc(100vh - 45px);
+            height: calc(100vh - 45px); /* Adjusted for header height */
         }
 
         .sidebar {
@@ -209,6 +209,8 @@
         .status.to-do { background-color: #1d3329; color: #3fb950; }
         .status.in-progress { background-color: #55441d; color: #d29922; }
         .status.blocked { background-color: #5c2c31; color: #f85149; }
+        .status.done { background-color: #0c431b; color: #3fb950; } /* Added for completed tasks */
+
 
         /* --- Risk Color Styles (based on assumed risk-log.html) --- */
         .risk-high { color: #f85149; font-weight: bold; } /* Red */
@@ -233,10 +235,9 @@
         <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
 
         <div class="user-info">
-            Student — Project Manager 
-            <span class="user-initials">K</span>
-
-            <button class="signout-btn" onclick="window.location.href='index.html'">Sign Out</button>
+            <span id="userNameDisplay">Loading...</span>
+            <span class="user-initials" id="userInitialsDisplay">?</span>
+            <button class="signout-btn" onclick="signOutUser()">Sign Out</button>
         </div>
     </div>
 
@@ -305,24 +306,72 @@
         </div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+
     <script>
-        /* Loads from LocalStorage */
-        function loadTasks() {
-            const t = localStorage.getItem('projectTasks');
-            return t ? JSON.parse(t) : [];
+        // Your Firebase Configuration (make sure this is correct from your Project Settings)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
+            authDomain: "masters-project-kenneth.firebaseapp.com",
+            projectId: "masters-project-kenneth",
+            storageBucket: "masters-project-kenneth.firebasestorage.app",
+            messagingSenderId: "685736871672",
+            appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null; // To store the authenticated user object
+        let userId = null;      // To store the user's UID
+
+        // --- AUTHENTICATION CHECK ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // User is signed in.
+                currentUser = user;
+                userId = user.uid;
+
+                // Update UI with user info
+                document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
+                document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
+
+                // Start loading user-specific data from Firestore
+                setupFirestoreListeners();
+
+            } else {
+                // No user is signed in. Redirect to login page.
+                console.log("No user signed in. Redirecting to login.");
+                window.location.href = "index.html";
+            }
+        });
+
+        function signOutUser() {
+            auth.signOut().then(() => {
+                // Sign-out successful. Clear local storage and redirect.
+                localStorage.removeItem("LPM_session");
+                localStorage.removeItem("LPM_user_uid");
+                // Also clear any data saved in localStorage if you were using it
+                // localStorage.removeItem('projectTasks');
+                // localStorage.removeItem('projectEvents');
+                // localStorage.removeItem('projectRisks');
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Error signing out:", error);
+                alert("Error signing out: " + error.message);
+            });
         }
 
-        function loadEvents() {
-            const e = localStorage.getItem('projectEvents');
-            return e ? JSON.parse(e) : [];
-        }
+        // --- FIRESTORE DATA FUNCTIONS ---
 
-        function loadRisks() {
-            const r = localStorage.getItem('projectRisks');
-            return r ? JSON.parse(r) : [];
-        }
-
-        /* Helper function to get the CSS class for risk level */
+        // Helper function to get the CSS class for risk level
         function getRiskColor(level) {
             const normalizedLevel = level.toLowerCase().trim();
             if (normalizedLevel === 'high') return 'risk-high';
@@ -331,9 +380,46 @@
             return '';
         }
 
+        // Setup real-time listeners for all dashboard data
+        function setupFirestoreListeners() {
+            if (!userId) {
+                console.error("User ID not available for Firestore listeners.");
+                return;
+            }
+
+            // Listen for Tasks (real-time)
+            db.collection(`users/${userId}/tasks`).orderBy("createdAt", "asc")
+                .onSnapshot(snapshot => {
+                    const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTaskSummary(tasks);
+                }, error => {
+                    console.error("Error fetching tasks:", error);
+                    document.getElementById('dashboardTaskList').innerHTML = '<li style="text-align:center;color:#f85149;">Error loading tasks.</li>';
+                });
+
+            // Listen for Timeline Events (real-time)
+            db.collection(`users/${userId}/events`).orderBy("date", "asc") // Assuming 'date' field for events
+                .onSnapshot(snapshot => {
+                    const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTimelineSummary(events);
+                }, error => {
+                    console.error("Error fetching events:", error);
+                    document.getElementById('dashboardTimelineSummary').innerHTML = '<li style="text-align:center;color:#f85149;">Error loading timeline events.</li>';
+                });
+
+            // Listen for Risks (real-time)
+            db.collection(`users/${userId}/risks`).orderBy("priority", "desc") // Assuming 'priority' field for risks
+                .onSnapshot(snapshot => {
+                    const risks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderRiskSummary(risks);
+                }, error => {
+                    console.error("Error fetching risks:", error);
+                    document.getElementById('riskSnapshotContent').innerHTML = '<p style="text-align:center;color:#f85149;">Error loading risks.</p>';
+                });
+        }
+
         /* Render Tasks */
-        function renderTaskSummary() {
-            const tasks = loadTasks();
+        function renderTaskSummary(tasks) {
             const active = tasks.filter(t => !t.completed);
             const completed = tasks.filter(t => t.completed);
 
@@ -349,24 +435,25 @@
                 return;
             }
 
-            active.slice(0, 3).forEach(task => {
+            active.slice(0, 3).forEach(task => { // Display top 3 active tasks
                 const li = document.createElement('li');
                 li.classList.add('task-item');
+                // Determine status class, default to 'to-do' if not specified
+                const statusClass = task.status ? task.status.toLowerCase().replace(/\s/g, '-') : 'to-do';
 
                 li.innerHTML = `
                     <div>
-                        ${task.text}
-                        <span class="task-owner-display">(${task.owner})</span>
+                        ${task.title || task.text}
+                        <span class="task-owner-display">(${task.owner || 'Unassigned'})</span>
                     </div>
-                    <span class="status to-do">To do</span>
+                    <span class="status ${statusClass}">${task.status || 'To do'}</span>
                 `;
                 list.appendChild(li);
             });
         }
 
         /* Render Timeline */
-        function renderTimelineSummary() {
-            const events = loadEvents();
+        function renderTimelineSummary(events) {
             const list = document.getElementById('dashboardTimelineSummary');
             list.innerHTML = '';
 
@@ -378,19 +465,18 @@
                 return;
             }
 
-            events.slice(0, 5).forEach(ev => {
+            events.slice(0, 5).forEach(ev => { // Display top 5 events
                 const li = document.createElement('li');
                 li.innerHTML = `
-                    <span>${ev.title}</span>
-                    <span>${ev.status}</span>
+                    <span>${ev.title || 'Untitled Event'}</span>
+                    <span>${ev.date ? new Date(ev.date.toDate()).toLocaleDateString() : 'N/A'}</span>
                 `;
                 list.appendChild(li);
             });
         }
 
-        /* Render Risks (Updated) */
-        function renderRiskSummary() {
-            const risks = loadRisks();
+        /* Render Risks */
+        function renderRiskSummary(risks) {
             document.getElementById('riskCount').textContent = risks.length;
 
             const container = document.getElementById('riskSnapshotContent');
@@ -402,25 +488,19 @@
                 return;
             }
 
-            const top = risks[0];
-            
+            // Find the highest priority risk. Assuming risks are already sorted by priority desc.
+            const topRisk = risks[0];
+
             // Get color classes for Impact and Probability
-            const impactClass = getRiskColor(top.impact);
-            const probClass = getRiskColor(top.probability);
-            
+            const impactClass = getRiskColor(topRisk.impact || 'low');
+            const probClass = getRiskColor(topRisk.probability || 'low');
+
             container.innerHTML = `
-                <p><strong>${top.description}</strong></p>
-                <p>Impact: <span class="${impactClass}">${top.impact}</span></p>
-                <p>Probability: <span class="${probClass}">${top.probability}</span></p>
+                <p><strong>${topRisk.description || 'No description'}</strong></p>
+                <p>Impact: <span class="${impactClass}">${topRisk.impact || 'Low'}</span></p>
+                <p>Probability: <span class="${probClass}">${topRisk.probability || 'Low'}</span></p>
             `;
         }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            renderTaskSummary();
-            renderTimelineSummary();
-            renderRiskSummary();
-        });
     </script>
-
 </body>
 </html>

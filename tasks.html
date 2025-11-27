@@ -80,11 +80,11 @@
         .signout-btn:hover {
             background-color: #5c2c31;
         }
-        
+
         /* --- Sidebar & Main Layout --- */
         .main-layout {
             display: flex;
-            height: calc(100vh - 45px);
+            height: calc(100vh - 45px); /* Adjusted for header height */
         }
 
         .sidebar {
@@ -124,7 +124,7 @@
             padding: 20px;
             overflow-y: auto;
         }
-        
+
         h1 {
             color: #58a6ff;
             border-bottom: 2px solid #21262d;
@@ -146,7 +146,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
-            align-items: stretch; 
+            align-items: stretch;
         }
 
         #taskInput, #taskOwner {
@@ -158,9 +158,9 @@
         }
 
         #taskInput {
-            flex-grow: 3; 
+            flex-grow: 3;
         }
-        
+
         #taskOwner {
             flex-grow: 1;
             width: 150px;
@@ -214,7 +214,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        
+
         .task-item:hover {
             background-color: #2d3844;
         }
@@ -224,7 +224,7 @@
             border-left-color: #3fb950;
             color: #8b949e;
         }
-        
+
         .task-item.completed .task-text {
             text-decoration: line-through;
         }
@@ -286,11 +286,9 @@
         <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
 
         <div class="user-info">
-            Student — Project Manager
-            <span class="user-initials">K</span>
-
-            <!-- SIGN OUT BUTTON -->
-            <button class="signout-btn" onclick="window.location.href='index.html'">Sign Out</button>
+            <span id="userNameDisplay">Loading...</span>
+            <span class="user-initials" id="userInitialsDisplay">?</span>
+            <button class="signout-btn" onclick="signOutUser()">Sign Out</button>
         </div>
     </div>
 
@@ -304,165 +302,287 @@
                 <li><a href="docs.html">📎 Docs</a></li>
             </ul>
         </div>
-        
+
         <div class="content">
             <h1>🗂 Task Board</h1>
-            
+
             <div class="task-management card">
                 <div class="task-input-bar">
-                    <input type="hidden" id="editTaskIndex">
+                    <input type="hidden" id="editTaskId"> <!-- Changed from editTaskIndex -->
                     <input type="text" id="taskInput" placeholder="Add or edit task description">
                     <input type="text" id="taskOwner" placeholder="Assign Owner (e.g., Karim)">
-                    
+
                     <button id="addTaskButton">Add Task</button>
                     <button id="saveEditButton" style="display:none;">Save Edit</button>
                     <button id="cancelEditButton">Cancel</button>
                 </div>
 
-                <ul class="task-list" id="taskList"></ul>
+                <ul class="task-list" id="taskList">
+                    <li style="text-align:center;color:#8b949e;">Loading tasks...</li>
+                </ul>
             </div>
-            
+
             <div class="footer">
                 <p>© Lightweight IT PM — Designed for academic teams</p>
             </div>
         </div>
     </div>
 
-<script>
-    const taskInput = document.getElementById('taskInput');
-    const taskOwnerInput = document.getElementById('taskOwner');
-    const addTaskButton = document.getElementById('addTaskButton');
-    const saveEditButton = document.getElementById('saveEditButton');
-    const cancelEditButton = document.getElementById('cancelEditButton');
-    const editTaskIndexInput = document.getElementById('editTaskIndex');
-    const taskList = document.getElementById('taskList');
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
 
-    function loadTasks() {
-        const tasksJson = localStorage.getItem('projectTasks');
-        return tasksJson
-            ? JSON.parse(tasksJson).map(t => ({ ...t, owner: t.owner || 'Unassigned' }))
-            : [];
-    }
-
-    function saveTasks() {
-        localStorage.setItem('projectTasks', JSON.stringify(tasks));
-    }
-
-    let tasks = loadTasks();
-
-    function setFormMode(mode, task = null, index = null) {
-        if (mode === 'add') {
-            editTaskIndexInput.value = '';
-            taskInput.value = '';
-            taskOwnerInput.value = '';
-            addTaskButton.style.display = 'block';
-            saveEditButton.style.display = 'none';
-            cancelEditButton.style.display = 'none';
-            taskInput.placeholder = 'Add new task description';
-        } else {
-            editTaskIndexInput.value = index;
-            taskInput.value = task.text;
-            taskOwnerInput.value = task.owner === 'Unassigned' ? '' : task.owner;
-            addTaskButton.style.display = 'none';
-            saveEditButton.style.display = 'block';
-            cancelEditButton.style.display = 'block';
-        }
-    }
-
-    function renderTasks() {
-        taskList.innerHTML = '';
-
-        if (tasks.length === 0) {
-            taskList.innerHTML = '<p style="text-align:center;color:#8b949e;">No tasks yet.</p>';
-            return;
-        }
-
-        tasks.forEach((task, index) => {
-            const li = document.createElement('li');
-            li.classList.add('task-item');
-            if (task.completed) li.classList.add('completed');
-
-            li.onclick = () => toggleTask(index);
-
-            li.innerHTML = `
-                <div class="task-details">
-                    <span class="task-text">${task.text}</span>
-                    <span class="task-owner-display">${task.owner}</span>
-                </div>
-                <div class="task-actions">
-                    <button class="edit-button" onclick="event.stopPropagation(); editTask(${index})">✏️</button>
-                    <button class="delete-button" onclick="event.stopPropagation(); deleteTask(${index})">🗑️</button>
-                </div>
-            `;
-
-            taskList.appendChild(li);
-        });
-
-        saveTasks();
-    }
-
-    function addTask() {
-        const text = taskInput.value.trim();
-        const owner = taskOwnerInput.value.trim() || 'Unassigned';
-
-        if (!text) return alert('Task description required.');
-
-        const newTask = {
-            text,
-            owner,
-            completed: false,
-            id: Date.now()
+    <script>
+        // Your Firebase Configuration (make sure this is correct from your Project Settings)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
+            authDomain: "masters-project-kenneth.firebaseapp.com",
+            projectId: "masters-project-kenneth",
+            storageBucket: "masters-project-kenneth.firebasestorage.app",
+            messagingSenderId: "685736871672",
+            appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
         };
 
-        tasks.push(newTask);
-        setFormMode('add');
-        renderTasks();
-    }
-
-    function saveEditedTask() {
-        const index = parseInt(editTaskIndexInput.value);
-        const text = taskInput.value.trim();
-        const owner = taskOwnerInput.value.trim() || 'Unassigned';
-
-        if (!text) return alert('Task description required.');
-
-        tasks[index].text = text;
-        tasks[index].owner = owner;
-        setFormMode('add');
-        renderTasks();
-    }
-
-    window.editTask = index => {
-        setFormMode('edit', tasks[index], index);
-    };
-
-    window.toggleTask = index => {
-        tasks[index].completed = !tasks[index].completed;
-        renderTasks();
-    };
-
-    window.deleteTask = index => {
-        if (confirm(`Delete task: "${tasks[index].text}"?`)) {
-            tasks.splice(index, 1);
-            renderTasks();
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
-    };
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-    addTaskButton.onclick = addTask;
-    saveEditButton.onclick = saveEditedTask;
-    cancelEditButton.onclick = () => setFormMode('add');
+        let currentUser = null; // To store the authenticated user object
+        let userId = null;      // To store the user's UID
+        let unsubscribeTasks = null; // To hold the unsubscribe function for the tasks listener
 
-    taskInput.addEventListener('keypress', e => {
-        if (e.key === 'Enter') {
-            editTaskIndexInput.value ? saveEditedTask() : addTask();
+        const taskInput = document.getElementById('taskInput');
+        const taskOwnerInput = document.getElementById('taskOwner');
+        const addTaskButton = document.getElementById('addTaskButton');
+        const saveEditButton = document.getElementById('saveEditButton');
+        const cancelEditButton = document.getElementById('cancelEditButton');
+        const editTaskIdInput = document.getElementById('editTaskId'); // Changed from editTaskIndex
+        const taskList = document.getElementById('taskList');
+
+        // --- AUTHENTICATION CHECK ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // User is signed in.
+                currentUser = user;
+                userId = user.uid;
+
+                // Update UI with user info
+                document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
+                document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
+
+                // Start listening for tasks once user is authenticated
+                setupTaskListener();
+
+            } else {
+                // No user is signed in. Redirect to login page.
+                console.log("No user signed in. Redirecting to login.");
+                window.location.href = "index.html";
+            }
+        });
+
+        function signOutUser() {
+            auth.signOut().then(() => {
+                // Sign-out successful. Clear local storage (if any was used) and redirect.
+                localStorage.removeItem("LPM_session");
+                localStorage.removeItem("LPM_user_uid");
+                // If there's an active Firestore listener, unsubscribe it
+                if (unsubscribeTasks) {
+                    unsubscribeTasks();
+                }
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Error signing out:", error);
+                alert("Error signing out: " + error.message);
+            });
         }
-    });
 
-    document.addEventListener('DOMContentLoaded', () => {
-        setFormMode('add');
-        renderTasks();
-    });
-</script>
+        // --- FIRESTORE TASK OPERATIONS ---
+
+        function setupTaskListener() {
+            if (!userId) {
+                console.error("User ID not available for task listener.");
+                return;
+            }
+
+            // Unsubscribe from any previous listener to avoid duplicates
+            if (unsubscribeTasks) {
+                unsubscribeTasks();
+            }
+
+            // Real-time listener for tasks
+            unsubscribeTasks = db.collection(`users/${userId}/tasks`)
+                .orderBy("createdAt", "desc") // Order by creation time, newest first
+                .onSnapshot(snapshot => {
+                    const tasks = snapshot.docs.map(doc => ({
+                        id: doc.id, // Store Firestore document ID
+                        ...doc.data()
+                    }));
+                    renderTasks(tasks);
+                }, error => {
+                    console.error("Error fetching tasks:", error);
+                    taskList.innerHTML = '<li style="text-align:center;color:#f85149;">Error loading tasks.</li>';
+                });
+        }
+
+        function setFormMode(mode, task = null) { // Removed index, now uses task object
+            if (mode === 'add') {
+                editTaskIdInput.value = '';
+                taskInput.value = '';
+                taskOwnerInput.value = currentUser ? (currentUser.displayName || currentUser.email) : ''; // Pre-fill owner with current user
+                addTaskButton.style.display = 'block';
+                saveEditButton.style.display = 'none';
+                cancelEditButton.style.display = 'none';
+                taskInput.placeholder = 'Add new task description';
+            } else { // mode === 'edit'
+                editTaskIdInput.value = task.id; // Store Firestore document ID
+                taskInput.value = task.text;
+                taskOwnerInput.value = task.owner === 'Unassigned' ? '' : task.owner;
+                addTaskButton.style.display = 'none';
+                saveEditButton.style.display = 'block';
+                cancelEditButton.style.display = 'block';
+                taskInput.placeholder = 'Edit task description';
+            }
+        }
+
+        function renderTasks(tasks) { // Takes tasks array as argument
+            taskList.innerHTML = '';
+
+            if (tasks.length === 0) {
+                taskList.innerHTML = '<p style="text-align:center;color:#8b949e;">No tasks yet.</p>';
+                return;
+            }
+
+            tasks.forEach(task => { // Iterate through tasks directly
+                const li = document.createElement('li');
+                li.classList.add('task-item');
+                if (task.completed) li.classList.add('completed');
+
+                // Using task.id for actions
+                li.innerHTML = `
+                    <div class="task-details" onclick="toggleTask('${task.id}')">
+                        <span class="task-text">${task.text}</span>
+                        <span class="task-owner-display">${task.owner || 'Unassigned'}</span>
+                    </div>
+                    <div class="task-actions">
+                        <button class="edit-button" onclick="event.stopPropagation(); editTask('${task.id}')">✏️</button>
+                        <button class="delete-button" onclick="event.stopPropagation(); deleteTask('${task.id}')">🗑️</button>
+                    </div>
+                `;
+
+                taskList.appendChild(li);
+            });
+        }
+
+        async function addTask() {
+            const text = taskInput.value.trim();
+            const owner = taskOwnerInput.value.trim() || 'Unassigned';
+
+            if (!text) {
+                alert('Task description required.');
+                return;
+            }
+
+            try {
+                await db.collection(`users/${userId}/tasks`).add({
+                    text: text,
+                    owner: owner,
+                    completed: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() // Firestore timestamp for sorting
+                });
+                setFormMode('add');
+            } catch (error) {
+                console.error("Error adding task:", error);
+                alert("Failed to add task: " + error.message);
+            }
+        }
+
+        async function saveEditedTask() {
+            const taskId = editTaskIdInput.value;
+            const text = taskInput.value.trim();
+            const owner = taskOwnerInput.value.trim() || 'Unassigned';
+
+            if (!text) {
+                alert('Task description required.');
+                return;
+            }
+            if (!taskId) {
+                alert('No task selected for editing.');
+                return;
+            }
+
+            try {
+                await db.collection(`users/${userId}/tasks`).doc(taskId).update({
+                    text: text,
+                    owner: owner
+                });
+                setFormMode('add');
+            } catch (error) {
+                console.error("Error updating task:", error);
+                alert("Failed to update task: " + error.message);
+            }
+        }
+
+        // Global functions for event handlers
+        window.editTask = async (taskId) => { // Takes taskId
+            try {
+                const doc = await db.collection(`users/${userId}/tasks`).doc(taskId).get();
+                if (doc.exists) {
+                    setFormMode('edit', { id: doc.id, ...doc.data() });
+                } else {
+                    console.warn("Task not found for editing:", taskId);
+                }
+            } catch (error) {
+                console.error("Error fetching task for edit:", error);
+            }
+        };
+
+        window.toggleTask = async (taskId) => { // Takes taskId
+            try {
+                const doc = await db.collection(`users/${userId}/tasks`).doc(taskId).get();
+                if (doc.exists) {
+                    const currentStatus = doc.data().completed;
+                    await db.collection(`users/${userId}/tasks`).doc(taskId).update({
+                        completed: !currentStatus
+                    });
+                } else {
+                    console.warn("Task not found for toggling:", taskId);
+                }
+            } catch (error) {
+                console.error("Error toggling task status:", error);
+                alert("Failed to toggle task status: " + error.message);
+            }
+        };
+
+        window.deleteTask = async (taskId) => { // Takes taskId
+            if (confirm(`Delete this task?`)) { // You might want to get the task text to display in the confirm
+                try {
+                    await db.collection(`users/${userId}/tasks`).doc(taskId).delete();
+                } catch (error) {
+                    console.error("Error deleting task:", error);
+                    alert("Failed to delete task: " + error.message);
+                }
+            }
+        };
+
+        addTaskButton.onclick = addTask;
+        saveEditButton.onclick = saveEditedTask;
+        cancelEditButton.onclick = () => setFormMode('add');
+
+        taskInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') {
+                editTaskIdInput.value ? saveEditedTask() : addTask();
+            }
+        });
+
+        // Initialize form mode when the page loads, but tasks will be rendered by the listener
+        document.addEventListener('DOMContentLoaded', () => {
+            setFormMode('add');
+        });
+    </script>
 
 </body>
 </html>
