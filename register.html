@@ -67,16 +67,41 @@
 <body>
     <div class="register-container">
         <h2>Create Your Account</h2>
-        <form action="index.html" method="GET"> 
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="email" name="email" placeholder="Email Address" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <input type="password" name="confirm_password" placeholder="Confirm Password" required>
-            <button type="submit">Register and Proceed to Login</button>
-        </form>
+    <form onsubmit="registerUser(event)">
+    <input type="text" id="regUsername" placeholder="Username" required>
+    <input type="email" id="regEmail" placeholder="Email Address" required>
+    <input type="password" id="regPassword" placeholder="Password" required>
+    <input type="password" id="regConfirm" placeholder="Confirm Password" required>
+    <button type="submit">Register and Proceed to Login</button>
+</form>
+<div id="regMsg" style="color:#ADD8E6; margin-top:10px;"></div>
         <div class="login-link">
             Already have an account? <a href="index.html">Log In Here</a>
         </div>
     </div>
+<script>
+function registerUser(e) {
+    e.preventDefault();
+
+    const username = document.getElementById("regUsername").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const pass = document.getElementById("regPassword").value;
+    const pass2 = document.getElementById("regConfirm").value;
+
+    if (pass !== pass2) {
+        document.getElementById("regMsg").textContent = "Passwords do not match.";
+        return;
+    }
+
+    const user = { username, email, password: pass };
+
+    localStorage.setItem("LPM_user", JSON.stringify(user));
+
+    document.getElementById("regMsg").textContent = "Account created! Redirecting to login...";
+    setTimeout(() => {
+        window.location.href = "login.html";
+    }, 1500);
+}
+</script>
 </body>
 </html>

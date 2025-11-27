@@ -66,14 +66,43 @@
 <body>
     <div class="login-container">
         <h2>Lightweight IT PM Login</h2>
-        <form action="dashboard.html" method="GET"> 
-            <input type="text" name="username" placeholder="Username or Email" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Log In</button>
-        </form>
+     <form onsubmit="loginUser(event)">
+    <input type="text" id="loginUsername" placeholder="Username or Email" required>
+    <input type="password" id="loginPassword" placeholder="Password" required>
+    <button type="submit">Log In</button>
+</form>
+<div id="loginMsg" style="color:#ADD8E6; margin-top:10px;"></div>
         <div class="register-link">
             Don't have an account? <a href="register.html">Register Here</a>
         </div>
     </div>
+<script>
+function loginUser(e) {
+    e.preventDefault();
+
+    const savedUser = JSON.parse(localStorage.getItem("LPM_user"));
+    const usernameInput = document.getElementById("loginUsername").value.trim();
+    const passwordInput = document.getElementById("loginPassword").value;
+
+    if (!savedUser) {
+        document.getElementById("loginMsg").textContent = "No registered account found. Please register first.";
+        return;
+    }
+
+    const isMatch =
+        (usernameInput === savedUser.username || usernameInput === savedUser.email) &&
+        passwordInput === savedUser.password;
+
+    if (!isMatch) {
+        document.getElementById("loginMsg").textContent = "Invalid username/email or password.";
+        return;
+    }
+
+    // Create session
+    localStorage.setItem("LPM_session", "active");
+
+    window.location.href = "dashboard.html";
+}
+</script>
 </body>
 </html>
