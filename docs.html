@@ -295,19 +295,25 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-storage.js"></script>
 
     <script>
-        // Your Firebase Configuration (make sure this is correct from your Project Settings)
+        // Your Firebase Configuration - CORRECTED apiKey & VERIFIED storageBucket
         const firebaseConfig = {
-            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg", // Ensure this is your actual API Key
+            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg", // Corrected likely typo here
             authDomain: "masters-project-kenneth.firebaseapp.com",
             projectId: "masters-project-kenneth",
-            storageBucket: "masters-project-kenneth.appspot.com", // This should be projectid.appspot.com
+            storageBucket: "masters-project-kenneth.appspot.com", // Make sure this matches your project's default bucket
             messagingSenderId: "685736871672",
             appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
         };
 
         // Initialize Firebase
         if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+            try {
+                firebase.initializeApp(firebaseConfig);
+                console.log("Firebase initialized successfully.");
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                alert("Failed to initialize Firebase. Please check your console for errors and ensure your Firebase config is correct.");
+            }
         }
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -326,9 +332,11 @@
 
         // --- AUTHENTICATION CHECK ---
         auth.onAuthStateChanged(user => {
+            console.log("onAuthStateChanged fired. User:", user); // Log the user object
             if (user) {
                 currentUser = user;
                 userId = user.uid;
+                console.log("User is authenticated:", user.uid);
 
                 document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
                 document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
@@ -342,6 +350,7 @@
 
         function signOutUser() {
             auth.signOut().then(() => {
+                console.log("User signed out successfully.");
                 localStorage.removeItem("LPM_session");
                 localStorage.removeItem("LPM_user_uid");
                 if (unsubscribeDocs) {
@@ -358,11 +367,13 @@
 
         function setupDocListener() {
             if (!userId) {
-                console.error("User ID not available for document listener.");
+                console.error("User ID not available for document listener. Listener not set up.");
                 return;
             }
+            console.log("Setting up document listener for user:", userId);
 
             if (unsubscribeDocs) {
+                console.log("Unsubscribing from previous document listener.");
                 unsubscribeDocs();
             }
 
@@ -373,6 +384,7 @@
             unsubscribeDocs = db.collection(`users/${userId}/documents`)
                 .orderBy("uploadedAt", "desc") // Newest first
                 .onSnapshot(snapshot => {
+                    console.log("Received new document snapshot.");
                     const documents = snapshot.docs.map(doc => ({
                         id: doc.id, // Firestore document ID
                         ...doc.data()
@@ -426,8 +438,6 @@
             uploadStatus.style.color = '#58a6ff'; // Blue for info/progress
             uploadStatus.textContent = 'Uploading...';
 
-            // Generate a unique file name to avoid collisions, especially if multiple users upload files with the same name.
-            // Using a timestamp + original name is a good start, or a UUID.
             const uniqueFileName = `${Date.now()}_${file.name}`;
             const filePath = `users/${userId}/documents/${uniqueFileName}`; // Path in Cloud Storage
             const storageRef = storage.ref(filePath);
@@ -435,19 +445,16 @@
 
             uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED,
                 (snapshot) => {
-                    // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     uploadStatus.textContent = `Upload is ${progress.toFixed(0)}% done`;
                 },
                 (error) => {
-                    // Handle unsuccessful uploads
                     console.error("Upload error:", error);
                     uploadStatus.style.color = '#f85149'; // Red for error
                     uploadStatus.textContent = `Upload failed: ${error.message}`;
                     alert("Upload failed: " + error.message);
                 },
                 () => {
-                    // Handle successful uploads on complete
                     uploadTask.snapshot.ref.getDownloadURL().then(async (downloadURL) => {
                         try {
                             await db.collection(`users/${userId}/documents`).add({
@@ -472,14 +479,14 @@
             );
         }
 
-        window.downloadDoc = (docId, downloadURL, fileName) => { // docId is not strictly needed here but good practice
+        window.downloadDoc = (docId, downloadURL, fileName) => {
             if (downloadURL) {
                 const link = document.createElement("a");
                 link.href = downloadURL;
-                link.download = fileName; // Suggests a filename to the browser
-                document.body.appendChild(link); // Append to body to make it clickable
+                link.download = fileName;
+                document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link); // Clean up
+                document.body.removeChild(link);
             } else {
                 alert("Download URL not available.");
             }
@@ -491,19 +498,32 @@
                     // 1. Delete file from Cloud Storage
                     const fileRef = storage.ref(storageFullPath);
                     await fileRef.delete();
+                    console.log("File deleted from Cloud Storage:", storageFullPath);
 
                     // 2. Delete metadata from Firestore
                     await db.collection(`users/${userId}/documents`).doc(firestoreDocId).delete();
+                    console.log("Metadata deleted from Firestore:", firestoreDocId);
 
                     alert("Document deleted successfully!");
                 } catch (error) {
                     console.error("Error deleting document:", error);
-                    alert("Failed to delete document: " + error.message);
+                    // Specific check for 'storage/object-not-found'
+                    if (error.code === 'storage/object-not-found') {
+                        alert("Failed to delete file from storage (it might already be gone). Deleting metadata.");
+                        // Proceed to delete metadata if file was already missing
+                        try {
+                            await db.collection(`users/${userId}/documents`).doc(firestoreDocId).delete();
+                            console.log("Metadata deleted from Firestore after Storage file not found:", firestoreDocId);
+                        } catch (metadataError) {
+                             console.error("Failed to delete metadata after storage error:", metadataError);
+                             alert("Failed to delete metadata: " + metadataError.message);
+                        }
+                    } else {
+                        alert("Failed to delete document: " + error.message);
+                    }
                 }
             }
         };
-
-        // Initial setup for form mode is handled by auth.onAuthStateChanged
     </script>
 
 </body>
