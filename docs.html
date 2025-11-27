@@ -295,9 +295,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-storage.js"></script>
 
     <script>
-        // Your Firebase Configuration
+        // Your Firebase Configuration (make sure this is correct from your Project Settings)
         const firebaseConfig = {
-            apiKey: "AIzaSyCUoUZFuxNaUbxNaUbxMdZyEH4xSle2f0TU_HKg", // Ensure this is your actual API Key
+            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg", // Ensure this is your actual API Key
             authDomain: "masters-project-kenneth.firebaseapp.com",
             projectId: "masters-project-kenneth",
             storageBucket: "masters-project-kenneth.appspot.com", // This should be projectid.appspot.com
@@ -426,7 +426,10 @@
             uploadStatus.style.color = '#58a6ff'; // Blue for info/progress
             uploadStatus.textContent = 'Uploading...';
 
-            const filePath = `users/${userId}/documents/${file.name}`; // Path in Cloud Storage
+            // Generate a unique file name to avoid collisions, especially if multiple users upload files with the same name.
+            // Using a timestamp + original name is a good start, or a UUID.
+            const uniqueFileName = `${Date.now()}_${file.name}`;
+            const filePath = `users/${userId}/documents/${uniqueFileName}`; // Path in Cloud Storage
             const storageRef = storage.ref(filePath);
             const uploadTask = storageRef.put(file);
 
@@ -448,7 +451,8 @@
                     uploadTask.snapshot.ref.getDownloadURL().then(async (downloadURL) => {
                         try {
                             await db.collection(`users/${userId}/documents`).add({
-                                name: file.name,
+                                name: file.name, // Store original file name
+                                uniqueFileName: uniqueFileName, // Store unique name in storage
                                 fullPath: filePath, // Store full path for deletion from Storage
                                 downloadURL: downloadURL,
                                 uploadedBy: currentUser.displayName || currentUser.email,
