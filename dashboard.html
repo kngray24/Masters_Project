@@ -210,6 +210,11 @@
         .status.in-progress { background-color: #55441d; color: #d29922; }
         .status.blocked { background-color: #5c2c31; color: #f85149; }
 
+        /* --- Risk Color Styles (based on assumed risk-log.html) --- */
+        .risk-high { color: #f85149; font-weight: bold; } /* Red */
+        .risk-medium { color: #d29922; font-weight: bold; } /* Yellow/Orange */
+        .risk-low { color: #3fb950; font-weight: bold; } /* Green */
+
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -231,7 +236,6 @@
             Student — Project Manager 
             <span class="user-initials">K</span>
 
-            <!-- SIGN OUT BUTTON -->
             <button class="signout-btn" onclick="window.location.href='index.html'">Sign Out</button>
         </div>
     </div>
@@ -318,6 +322,15 @@
             return r ? JSON.parse(r) : [];
         }
 
+        /* Helper function to get the CSS class for risk level */
+        function getRiskColor(level) {
+            const normalizedLevel = level.toLowerCase().trim();
+            if (normalizedLevel === 'high') return 'risk-high';
+            if (normalizedLevel === 'medium') return 'risk-medium';
+            if (normalizedLevel === 'low') return 'risk-low';
+            return '';
+        }
+
         /* Render Tasks */
         function renderTaskSummary() {
             const tasks = loadTasks();
@@ -375,7 +388,7 @@
             });
         }
 
-        /* Render Risks */
+        /* Render Risks (Updated) */
         function renderRiskSummary() {
             const risks = loadRisks();
             document.getElementById('riskCount').textContent = risks.length;
@@ -390,10 +403,15 @@
             }
 
             const top = risks[0];
+            
+            // Get color classes for Impact and Probability
+            const impactClass = getRiskColor(top.impact);
+            const probClass = getRiskColor(top.probability);
+            
             container.innerHTML = `
                 <p><strong>${top.description}</strong></p>
-                <p>Impact: ${top.impact}</p>
-                <p>Probability: ${top.probability}</p>
+                <p>Impact: <span class="${impactClass}">${top.impact}</span></p>
+                <p>Probability: <span class="${probClass}">${top.probability}</span></p>
             `;
         }
 
