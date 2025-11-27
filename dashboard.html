@@ -332,7 +332,7 @@
             apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
             authDomain: "masters-project-kenneth.firebaseapp.com",
             projectId: "masters-project-kenneth",
-            storageBucket: "masters-project-kenneth.appspot.com", // Corrected storageBucket format
+            storageBucket: "masters-project-kenneth.appspot.com", // Consistent storageBucket format
             messagingSenderId: "685736871672",
             appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
         };
@@ -384,7 +384,7 @@
 
         // Helper function to get the CSS class for risk level
         function getRiskColor(level) {
-            const normalizedLevel = level.toLowerCase().trim();
+            const normalizedLevel = level ? level.toLowerCase().trim() : '';
             if (normalizedLevel === 'high') return 'risk-high';
             if (normalizedLevel === 'medium') return 'risk-medium';
             if (normalizedLevel === 'low') return 'risk-low';
@@ -504,6 +504,18 @@
         /* Render Risks */
         function renderRiskSummary(risks) {
             document.getElementById('riskCount').textContent = risks.length;
+
+            const activeRisks = risks.filter(r => r.status === 'active' || r.status === 'monitored');
+            const highImpactRisks = risks.filter(r => r.impact === 'high' && (r.status === 'active' || r.status === 'monitored'));
+            
+            let riskDetailText = '';
+            if (risks.length === 0) {
+                riskDetailText = 'No risks logged.';
+            } else {
+                riskDetailText = `${activeRisks.length} active, ${highImpactRisks.length} high-impact.`;
+            }
+            document.getElementById('riskDetails').textContent = riskDetailText;
+
 
             const container = document.getElementById('riskSnapshotContent');
             container.innerHTML = '';
