@@ -437,6 +437,7 @@
             if (user) {
                 currentUser = user;
                 userId = user.uid;
+                console.log("User authenticated:", user.email, "UID:", userId); // Log user info
 
                 document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
                 document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
@@ -470,8 +471,10 @@
                 console.error("User ID not available for risk listener.");
                 return;
             }
+            console.log("Setting up Firestore listener for risks for user:", userId);
 
             if (unsubscribeRisks) {
+                console.log("Unsubscribing from previous risk listener.");
                 unsubscribeRisks(); // Unsubscribe from previous listener
             }
 
@@ -485,20 +488,23 @@
             if (currentFilter === 'high-impact') {
                 query = query.where('impact', '==', 'high');
             } else if (currentFilter === 'active-status') {
-                query = query.where('status', '==', 'active').orderBy('probability', 'desc');
+                query = query.where('status', '==', 'active');
             }
 
             // Default ordering for 'all' or fallback
-            if (currentFilter === 'all') {
+            if (currentFilter === 'all' || currentFilter === 'high-impact') { // high-impact also needs default ordering if no other order is applied
                 query = query.orderBy('impact', 'desc').orderBy('probability', 'desc');
             }
-            query = query.orderBy('createdAt', 'desc'); // Always order by creation time last
+            // Always add createdAt as the last orderBy for stable sorting
+            query = query.orderBy('createdAt', 'desc'); // New risks with pending serverTimestamp will appear at the end
 
             unsubscribeRisks = query.onSnapshot(snapshot => {
+                console.log("Firestore risks snapshot received! Number of changes:", snapshot.docChanges().length);
                 const risks = snapshot.docs.map(doc => ({
                     id: doc.id, // Firestore document ID
                     ...doc.data()
                 }));
+                console.log("Current risks in snapshot:", risks); // Log the received risks
                 renderRisks(risks);
                 loadingMessage.style.display = 'none'; // Hide loading message after data is rendered
             }, error => {
@@ -531,6 +537,7 @@
                     riskMitigationInput.value = '';
                     riskStatusInput.value = 'active';
                 }
+                console.log("Risk form toggled to show:", show, "for editing:", !!riskData);
             } else { // Hiding the form
                 riskForm.style.display = 'none';
                 logNewRiskButton.style.display = 'block';
@@ -542,6 +549,7 @@
                 riskOwnerInput.value = '';
                 riskMitigationInput.value = '';
                 riskStatusInput.value = 'active';
+                console.log("Risk form toggled to hide.");
             }
         }
 
@@ -551,8 +559,10 @@
 
             if (risks.length === 0) {
                 emptyMessage.style.display = 'block';
+                console.log("No risks to render, showing empty message.");
             } else {
                 emptyMessage.style.display = 'none';
+                console.log("Rendering", risks.length, "risks.");
             }
 
             risks.forEach(risk => {
@@ -603,10 +613,12 @@
             try {
                 if (riskId) {
                     // UPDATE existing risk
+                    console.log("Attempting to update risk with ID:", riskId, "Data:", riskData);
                     await db.collection(`users/${userId}/risks`).doc(riskId).update(riskData);
                     console.log("Risk updated successfully!");
                 } else {
                     // ADD new risk
+                    console.log("Attempting to add new risk. Data:", riskData);
                     await db.collection(`users/${userId}/risks`).add({
                         ...riskData,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -622,8 +634,10 @@
 
         window.editRisk = async (riskId) => {
             try {
+                console.log("Fetching risk for editing with ID:", riskId);
                 const doc = await db.collection(`users/${userId}/risks`).doc(riskId).get();
                 if (doc.exists) {
+                    console.log("Risk data found for editing:", doc.data());
                     toggleForm(true, { id: doc.id, ...doc.data() });
                 } else {
                     console.warn("Risk not found for editing:", riskId);
@@ -638,6 +652,7 @@
         window.deleteRisk = async (riskId) => {
             if (confirm(`Are you sure you want to delete this risk?`)) {
                 try {
+                    console.log("Attempting to delete risk with ID:", riskId);
                     await db.collection(`users/${userId}/risks`).doc(riskId).delete();
                     console.log("Risk deleted successfully!");
                 } catch (error) {
@@ -659,6 +674,7 @@
                 e.target.classList.add('active');
 
                 currentFilter = e.target.dataset.filter;
+                console.log("Filter changed to:", currentFilter);
                 setupRiskListener(); // Re-fetch risks with new filter
             }
         });
