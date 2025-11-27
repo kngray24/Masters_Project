@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightweight IT PM — Dashboard</title>
+    <style>
+        /* --- General Layout and Dark Theme (for consistency) --- */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #161b22;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .logo {
+            background-color: #58a6ff;
+            color: #0d1117;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-right: 15px;
+        }
+
+        h2 {
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        .project-info {
+            font-weight: normal;
+            color: #8b949e;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .user-info {
+            margin-left: auto;
+            font-size: 0.9em;
+            color: #8b949e;
+            display: flex;
+            align-items: center;
+        }
+
+        .user-initials {
+            background-color: #58a6ff;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+
+        /* ---- SIGN OUT BUTTON ---- */
+        .signout-btn {
+            margin-left: 15px;
+            background-color: #30363d;
+            color: #f85149;
+            border: 1px solid #f85149;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: 0.2s;
+        }
+
+        .signout-btn:hover {
+            background-color: #5c2c31;
+        }
+
+        /* --- Sidebar & Main Layout --- */
+        .main-layout {
+            display: flex;
+            height: calc(100vh - 45px);
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #161b22;
+            padding: 20px 0;
+            border-right: 1px solid #21262d;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li a {
+            display: block;
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #c9d1d9;
+            transition: background-color 0.2s;
+            font-weight: 500;
+        }
+
+        .sidebar li a:hover, .sidebar li.active a {
+            background-color: #21262d;
+            color: #58a6ff;
+        }
+
+        .sidebar li.active a {
+            border-left: 3px solid #58a6ff;
+            padding-left: 17px;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        h1 {
+            color: #58a6ff;
+            border-bottom: 2px solid #21262d;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- Dashboard Specific Styles --- */
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card h4 {
+            color: #8b949e;
+            margin-top: 0;
+            font-size: 0.9em;
+            border-bottom: 1px solid #21262d;
+            padding-bottom: 5px;
+        }
+
+        .metric-number {
+            font-size: 2.5em;
+            margin: 5px 0 5px 0;
+            color: #58a6ff;
+        }
+
+        .metric-detail {
+            font-size: 0.9em;
+            color: #8b949e;
+        }
+
+        .main-area-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        /* Snippets styling */
+        .task-list-snippet,
+        .risk-snapshot,
+        .timeline-summary {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .task-item {
+            background-color: #21262d;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-owner-display {
+            font-size: 0.8em;
+            color: #8b949e;
+            margin-left: 10px;
+        }
+
+        .status {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            font-weight: bold;
+        }
+
+        .status.to-do { background-color: #1d3329; color: #3fb950; }
+        .status.in-progress { background-color: #55441d; color: #d29922; }
+        .status.blocked { background-color: #5c2c31; color: #f85149; }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid #21262d;
+            font-size: 0.8em;
+            color: #8b949e;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="logo">LP</div>
+        <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
+
+        <div class="user-info">
+            Student — Project Manager 
+            <span class="user-initials">K</span>
+
+            <!-- SIGN OUT BUTTON -->
+            <button class="signout-btn" onclick="window.location.href='index.html'">Sign Out</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <ul>
+                <li class="active"><a href="dashboard.html">🏠 Dashboard</a></li>
+                <li><a href="tasks.html">🗂 Tasks</a></li>
+                <li><a href="timeline.html">📅 Timeline</a></li>
+                <li><a href="risk-log.html">⚠️ Risk Log</a></li>
+                <li><a href="docs.html">📎 Docs</a></li>
+            </ul>
+        </div>
+
+        <div class="content">
+            <h1>🏠 Project Overview Dashboard</h1>
+
+            <div class="metrics-grid">
+                <div class="card metric-card">
+                    <h4>Active Tasks</h4>
+                    <p class="metric-number" id="taskCount">--</p>
+                    <p class="metric-detail" id="taskDetails">--</p>
+                </div>
+
+                <div class="card metric-card">
+                    <h4>Timeline Progress</h4>
+                    <p class="metric-number" id="timelineCount">--</p>
+                    <p class="metric-detail" id="timelineDetails">--</p>
+                </div>
+
+                <div class="card metric-card">
+                    <h4>Open Risks</h4>
+                    <p class="metric-number" id="riskCount">--</p>
+                    <p class="metric-detail" id="riskDetails">--</p>
+                </div>
+            </div>
+
+            <div class="main-area-grid">
+
+                <div class="card">
+                    <h2>To-Do — Top Priority</h2>
+                    <ul class="task-list-snippet" id="dashboardTaskList">
+                        <li style="text-align:center;color:#8b949e;">Loading tasks...</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h4>Highest Priority Risk Snapshot</h4>
+                    <div id="riskSnapshotContent">
+                        <p style="text-align:center;color:#8b949e;">Loading risks...</p>
+                    </div>
+                </div>
+
+                <div class="card" style="grid-column:1 / -1;">
+                    <h4>Project Schedule Summary</h4>
+                    <ul class="timeline-summary" id="dashboardTimelineSummary">
+                        <li style="text-align:center;color:#8b949e;">Loading timeline...</li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="footer">
+                © Lightweight IT PM — Designed for academic teams
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Loads from LocalStorage */
+        function loadTasks() {
+            const t = localStorage.getItem('projectTasks');
+            return t ? JSON.parse(t) : [];
+        }
+
+        function loadEvents() {
+            const e = localStorage.getItem('projectEvents');
+            return e ? JSON.parse(e) : [];
+        }
+
+        function loadRisks() {
+            const r = localStorage.getItem('projectRisks');
+            return r ? JSON.parse(r) : [];
+        }
+
+        /* Render Tasks */
+        function renderTaskSummary() {
+            const tasks = loadTasks();
+            const active = tasks.filter(t => !t.completed);
+            const completed = tasks.filter(t => t.completed);
+
+            document.getElementById('taskCount').textContent = active.length;
+            document.getElementById('taskDetails').innerHTML =
+                `${completed.length} completed.`;
+
+            const list = document.getElementById('dashboardTaskList');
+            list.innerHTML = '';
+
+            if (active.length === 0) {
+                list.innerHTML = '<li style="text-align:center;color:#8b949e;">No tasks.</li>';
+                return;
+            }
+
+            active.slice(0, 3).forEach(task => {
+                const li = document.createElement('li');
+                li.classList.add('task-item');
+
+                li.innerHTML = `
+                    <div>
+                        ${task.text}
+                        <span class="task-owner-display">(${task.owner})</span>
+                    </div>
+                    <span class="status to-do">To do</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        /* Render Timeline */
+        function renderTimelineSummary() {
+            const events = loadEvents();
+            const list = document.getElementById('dashboardTimelineSummary');
+            list.innerHTML = '';
+
+            document.getElementById('timelineCount').textContent = events.length;
+
+            if (events.length === 0) {
+                list.innerHTML =
+                    '<li style="text-align:center;color:#8b949e;">No timeline events.</li>';
+                return;
+            }
+
+            events.slice(0, 5).forEach(ev => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${ev.title}</span>
+                    <span>${ev.status}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        /* Render Risks */
+        function renderRiskSummary() {
+            const risks = loadRisks();
+            document.getElementById('riskCount').textContent = risks.length;
+
+            const container = document.getElementById('riskSnapshotContent');
+            container.innerHTML = '';
+
+            if (risks.length === 0) {
+                container.innerHTML =
+                    '<p style="text-align:center;color:#8b949e;">No risks.</p>';
+                return;
+            }
+
+            const top = risks[0];
+            container.innerHTML = `
+                <p><strong>${top.description}</strong></p>
+                <p>Impact: ${top.impact}</p>
+                <p>Probability: ${top.probability}</p>
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTaskSummary();
+            renderTimelineSummary();
+            renderRiskSummary();
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightweight IT PM — Risk Log</title>
+    <style>
+        /* --- General Layout and Dark Theme (for consistency) --- */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #161b22;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .logo {
+            background-color: #58a6ff;
+            color: #0d1117;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-right: 15px;
+        }
+
+        h2 {
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        .project-info {
+            font-weight: normal;
+            color: #8b949e;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .user-info {
+            margin-left: auto;
+            font-size: 0.9em;
+            color: #8b949e;
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Added gap for sign-out button */
+        }
+
+        .user-initials {
+            background-color: #58a6ff;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+        
+        /* --- SIGN OUT BUTTON STYLES (New) --- */
+        .sign-out-button {
+            /* Styling to make it look like a discreet action button */
+            background-color: #f44336; /* Red background for sign-out/danger */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .sign-out-button:hover {
+            background-color: #d32f2f;
+        }
+        
+        /* --- Sidebar & Main Layout --- */
+        .main-layout {
+            display: flex;
+            height: calc(100vh - 45px); /* Full viewport height minus header */
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #161b22;
+            padding: 20px 0;
+            border-right: 1px solid #21262d;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li a {
+            display: block;
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #c9d1d9;
+            transition: background-color 0.2s;
+            font-weight: 500;
+        }
+
+        .sidebar li a:hover, .sidebar li.active a {
+            background-color: #21262d;
+            color: #58a6ff;
+        }
+
+        .sidebar li.active a {
+            border-left: 3px solid #58a6ff;
+            padding-left: 17px;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        h1 {
+            color: #58a6ff;
+            border-bottom: 2px solid #21262d;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- Risk Log Specific Styles --- */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filters button {
+            padding: 8px 15px;
+            margin-right: 10px;
+            background-color: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .filters button:hover, .filters button.active {
+            background-color: #30363d;
+        }
+
+        #logNewRiskButton {
+            padding: 10px 15px;
+            background-color: #9a6700; /* Amber for risk action */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        #logNewRiskButton:hover {
+            background-color: #a77717;
+        }
+        
+        /* Risk Form Styling */
+        #riskForm {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+        }
+        
+        #riskForm input[type="text"], #riskForm select, #riskForm textarea {
+            padding: 10px;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .save-button, .cancel-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .save-button {
+            background-color: #58a6ff;
+            color: white;
+        }
+
+        .cancel-button {
+            background-color: #30363d;
+            color: #c9d1d9;
+        }
+        
+        /* Risk Table Styling */
+        .risk-table-container {
+            overflow-x: auto;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            background-color: #161b22;
+        }
+        
+        .risk-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        .risk-table th, .risk-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .risk-table th {
+            background-color: #21262d;
+            color: #8b949e;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .risk-table tr:hover {
+            background-color: #1f2a37;
+        }
+        
+        /* Status/Impact styling */
+        .risk-status {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+            display: inline-block;
+            text-transform: capitalize;
+        }
+
+        .impact.high { background-color: #5c2c31; color: #f85149; }
+        .impact.medium { background-color: #55441d; color: #d29922; }
+        .impact.low { background-color: #1d3329; color: #3fb950; }
+        
+        .probability.high { background-color: #5c2c31; color: #f85149; }
+        .probability.medium { background-color: #55441d; color: #d29922; }
+        .probability.low { background-color: #1d3329; color: #3fb950; }
+        
+        .risk-actions button {
+            background: none;
+            border: none;
+            color: #58a6ff;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .risk-actions button:hover {
+            color: #8b949e;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid #21262d;
+            font-size: 0.8em;
+            color: #8b949e;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">LP</div>
+        <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
+        <div class="user-info">
+            Student — Project Manager 
+            <span class="user-initials">K</span>
+            <a href="index.html" class="sign-out-button">Sign Out</a>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <ul>
+                <li><a href="dashboard.html">🏠 Dashboard</a></li>
+                <li><a href="tasks.html">🗂 Tasks</a></li>
+                <li><a href="timeline.html">📅 Timeline</a></li>
+                <li class="active"><a href="risk-log.html">⚠️ Risk Log</a></li>
+                <li><a href="docs.html">📎 Docs</a></li>
+            </ul>
+        </div>
+        
+        <div class="content">
+            <h1>⚠️ Project Risk Log</h1>
+            
+            <div class="controls">
+                <div class="filters">
+                    <button class="active" data-filter="all">Filter: All Risks</button>
+                    <button data-filter="high">Filter: High Priority</button>
+                    <button data-filter="active">Filter: Active</button>
+                </div>
+                <button id="logNewRiskButton">+ Log New Risk</button>
+            </div>
+            
+            <div id="riskForm">
+                <input type="hidden" id="editRiskIndex">
+                <input type="text" id="riskDescription" placeholder="Risk Description (What could happen?)" required>
+                <div style="display: flex; gap: 10px;">
+                    <select id="riskImpact" required style="width: 33%;">
+                        <option value="">-- Select Impact --</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <select id="riskProbability" required style="width: 33%;">
+                        <option value="">-- Select Probability --</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <input type="text" id="riskOwner" placeholder="Owner (e.g., Priya)" required style="width: 33%;">
+                </div>
+                <textarea id="riskMitigation" placeholder="Mitigation Strategy (What will we do to prevent/reduce impact?)" rows="3"></textarea>
+                <select id="riskStatus" required>
+                    <option value="active">Active</option>
+                    <option value="monitored">Monitored</option>
+                    <option value="retired">Retired</option>
+                </select>
+                <div class="form-actions">
+                    <button id="cancelButton" class="cancel-button">Cancel</button>
+                    <button id="saveRiskButton" class="save-button">Save Risk</button>
+                </div>
+            </div>
+            
+            <div class="risk-table-container">
+                <table class="risk-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th style="width: 30%;">Description</th>
+                            <th>Impact</th>
+                            <th>Probability</th>
+                            <th>Owner</th>
+                            <th style="width: 30%;">Mitigation Strategy</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="riskTableBody">
+                        </tbody>
+                </table>
+                <p id="emptyMessage" style="text-align: center; color: #8b949e; padding: 20px;">No risks logged yet. Click "+ Log New Risk" to start.</p>
+            </div>
+            
+            <div class="footer">
+                <p>© Lightweight IT PM — Designed for academic teams</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const logNewRiskButton = document.getElementById('logNewRiskButton');
+        const riskForm = document.getElementById('riskForm');
+        const saveRiskButton = document.getElementById('saveRiskButton');
+        const cancelButton = document.getElementById('cancelButton');
+        const riskTableBody = document.getElementById('riskTableBody');
+        const emptyMessage = document.getElementById('emptyMessage');
+        const editRiskIndexInput = document.getElementById('editRiskIndex');
+
+        // Form Inputs
+        const riskDescriptionInput = document.getElementById('riskDescription');
+        const riskImpactInput = document.getElementById('riskImpact');
+        const riskProbabilityInput = document.getElementById('riskProbability');
+        const riskOwnerInput = document.getElementById('riskOwner');
+        const riskMitigationInput = document.getElementById('riskMitigation');
+        const riskStatusInput = document.getElementById('riskStatus');
+
+        // --- LOCAL STORAGE: Load risks on startup ---
+        function loadRisks() {
+            const risksJson = localStorage.getItem('projectRisks');
+            // If data exists, parse it. If not, return the initial example data.
+            return risksJson ? JSON.parse(risksJson) : [
+                { id: 'R-001', description: 'Authentication system development delays', impact: 'high', probability: 'medium', owner: 'Priya', mitigation: 'Add retry logic and use external library.', status: 'active' },
+                { id: 'R-002', description: 'Team member illness impacting implementation.', impact: 'medium', probability: 'high', owner: 'Project Manager', mitigation: 'Cross-train as key modules (ongoing).', status: 'monitored' },
+                { id: 'R-003', description: 'Scope creep from client feedback.', impact: 'low', probability: 'medium', owner: 'Omar', mitigation: 'Strict change control process (in place).', status: 'active' }
+            ];
+        }
+
+        // --- LOCAL STORAGE: Save risks after any change ---
+        function saveRisks() {
+            localStorage.setItem('projectRisks', JSON.stringify(risks));
+        }
+
+        let risks = loadRisks();
+        let riskCounter = risks.length > 0 ? Math.max(...risks.map(r => parseInt(r.id.split('-')[1]))) + 1 : 4;
+
+
+        // Helper function to show/hide the form and reset state
+        function toggleForm(show = true, reset = true) {
+            if (show) {
+                riskForm.style.display = 'flex';
+                logNewRiskButton.style.display = 'none';
+                if (reset) {
+                    riskDescriptionInput.value = '';
+                    riskImpactInput.value = '';
+                    riskProbabilityInput.value = '';
+                    riskOwnerInput.value = '';
+                    riskMitigationInput.value = '';
+                    riskStatusInput.value = 'active';
+                    editRiskIndexInput.value = '';
+                }
+            } else {
+                riskForm.style.display = 'none';
+                logNewRiskButton.style.display = 'block';
+            }
+        }
+        
+        // --- RENDER FUNCTION ---
+        function renderRisks() {
+            riskTableBody.innerHTML = ''; 
+
+            if (risks.length === 0) {
+                emptyMessage.style.display = 'block';
+                return;
+            } else {
+                emptyMessage.style.display = 'none';
+            }
+
+            risks.forEach((risk, index) => {
+                const row = riskTableBody.insertRow();
+                
+                row.innerHTML = `
+                    <td>${risk.id}</td>
+                    <td>${risk.description}</td>
+                    <td><span class="risk-status impact ${risk.impact}">${risk.impact}</span></td>
+                    <td><span class="risk-status probability ${risk.probability}">${risk.probability}</span></td>
+                    <td>${risk.owner}</td>
+                    <td>${risk.mitigation}</td>
+                    <td>${risk.status}</td>
+                    <td class="risk-actions">
+                        <button onclick="editRisk(${index})">✏️</button>
+                        <button onclick="deleteRisk(${index})">🗑️</button>
+                    </td>
+                `;
+            });
+            
+            saveRisks();
+        }
+        
+        // --- CRUD LOGIC ---
+
+        function saveRisk() {
+            const description = riskDescriptionInput.value.trim();
+            const impact = riskImpactInput.value;
+            const probability = riskProbabilityInput.value;
+            const owner = riskOwnerInput.value.trim();
+            const mitigation = riskMitigationInput.value.trim();
+            const status = riskStatusInput.value;
+            const index = editRiskIndexInput.value;
+
+            if (!description || !impact || !probability || !owner) {
+                alert("Please fill in Description, Impact, Probability, and Owner.");
+                return;
+            }
+
+            const newRiskData = {
+                description: description,
+                impact: impact,
+                probability: probability,
+                owner: owner,
+                mitigation: mitigation,
+                status: status
+            };
+
+            if (index !== '') {
+                // UPDATE existing risk
+                risks[parseInt(index)] = { ...risks[parseInt(index)], ...newRiskData };
+            } else {
+                // ADD new risk
+                newRiskData.id = `R-${String(riskCounter++).padStart(3, '0')}`;
+                risks.push(newRiskData);
+            }
+
+            renderRisks();
+            toggleForm(false);
+        }
+
+        function editRisk(index) {
+            const risk = risks[index];
+            
+            riskDescriptionInput.value = risk.description;
+            riskImpactInput.value = risk.impact;
+            riskProbabilityInput.value = risk.probability;
+            riskOwnerInput.value = risk.owner;
+            riskMitigationInput.value = risk.mitigation;
+            riskStatusInput.value = risk.status;
+            editRiskIndexInput.value = index;
+
+            toggleForm(true, false);
+        }
+        
+        function deleteRisk(index) {
+            if (confirm(`Are you sure you want to delete risk ${risks[index].id}: "${risks[index].description}"?`)) {
+                risks.splice(index, 1);
+                renderRisks();
+            }
+        }
+
+
+        // --- EVENT LISTENERS ---
+        logNewRiskButton.addEventListener('click', () => toggleForm(true));
+        saveRiskButton.addEventListener('click', saveRisk);
+        cancelButton.addEventListener('click', () => toggleForm(false));
+
+        // Initial render when the page loads
+        document.addEventListener('DOMContentLoaded', renderRisks);
+
+    </script>
+
+</body>
+</html>

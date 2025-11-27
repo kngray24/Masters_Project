@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightweight IT PM — Timeline</title>
+    <style>
+        /* --- General Layout and Dark Theme (for consistency) --- */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #161b22;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .logo {
+            background-color: #58a6ff;
+            color: #0d1117;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-right: 15px;
+        }
+
+        h2 {
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        .project-info {
+            font-weight: normal;
+            color: #8b949e;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .user-info {
+            margin-left: auto;
+            font-size: 0.9em;
+            color: #8b949e;
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Added gap for sign-out button */
+        }
+
+        .user-initials {
+            background-color: #58a6ff;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+        
+        /* --- SIGN OUT BUTTON STYLES (New) --- */
+        .sign-out-button {
+            /* Styling to make it look like a discreet action button */
+            background-color: #f44336; /* Red background for sign-out/danger */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .sign-out-button:hover {
+            background-color: #d32f2f;
+        }
+        
+        /* --- Sidebar & Main Layout --- */
+        .main-layout {
+            display: flex;
+            height: calc(100vh - 45px); /* Full viewport height minus header */
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #161b22;
+            padding: 20px 0;
+            border-right: 1px solid #21262d;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li a {
+            display: block;
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #c9d1d9;
+            transition: background-color 0.2s;
+            font-weight: 500;
+        }
+
+        .sidebar li a:hover, .sidebar li.active a {
+            background-color: #21262d;
+            color: #58a6ff;
+        }
+
+        .sidebar li.active a {
+            border-left: 3px solid #58a6ff;
+            padding-left: 17px;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        h1 {
+            color: #58a6ff;
+            border-bottom: 2px solid #21262d;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- Timeline Specific Styles (omitted for brevity, assume they are the same) --- */
+        /* ... (Keep all your existing Timeline CSS here) ... */
+
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filters button {
+            padding: 8px 15px;
+            margin-right: 10px;
+            background-color: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .filters button:hover, .filters button.active {
+            background-color: #30363d;
+        }
+
+        #addEventButton {
+            padding: 10px 15px;
+            background-color: #238636;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        #addEventButton:hover {
+            background-color: #2ea043;
+        }
+
+        /* Event Form Styling */
+        #eventForm {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+        }
+        
+        #eventForm input[type="text"], #eventForm input[type="date"], #eventForm select {
+            padding: 10px;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .save-button, .cancel-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .save-button {
+            background-color: #58a6ff;
+            color: white;
+        }
+
+        .cancel-button {
+            background-color: #30363d;
+            color: #c9d1d9;
+        }
+
+        /* Gantt-style Roadmap */
+        .roadmap-container {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+        }
+
+        .roadmap-header {
+            display: flex;
+            font-weight: bold;
+            color: #8b949e;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .roadmap-header div {
+            flex: 1;
+            text-align: center;
+        }
+
+        .roadmap-header .event-name {
+            text-align: left;
+            flex-basis: 150px;
+            flex-grow: 0;
+            padding-right: 10px;
+        }
+        
+        .roadmap-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed #21262d;
+        }
+        
+        .roadmap-row:last-child {
+            border-bottom: none;
+        }
+
+        .roadmap-event-name {
+            flex-basis: 150px;
+            flex-grow: 0;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 10px;
+        }
+
+        .roadmap-chart {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            height: 20px;
+            background-color: #0d1117;
+            border-radius: 3px;
+            padding: 0 5px;
+        }
+
+        .timeline-bar {
+            height: 10px;
+            border-radius: 2px;
+            background-color: #58a6ff; /* Default */
+            position: relative;
+            font-size: 0.7em;
+            color: white;
+            text-align: right;
+            line-height: 10px;
+            padding-right: 5px;
+            transition: width 0.5s;
+        }
+        
+        .timeline-bar.current { background-color: #d29922; }
+        .timeline-bar.complete { background-color: #3fb950; }
+        .timeline-bar.upcoming { background-color: #58a6ff; }
+        
+        /* Event List */
+        .event-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .event-item {
+            background-color: #21262d;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 4px solid;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            line-height: 1.4;
+        }
+
+        .event-item.upcoming { border-left-color: #58a6ff; }
+        .event-item.current { border-left-color: #d29922; }
+        .event-item.complete { border-left-color: #3fb950; opacity: 0.7; }
+
+        .event-details-text {
+            flex-grow: 1;
+        }
+
+        .event-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #c9d1d9;
+        }
+
+        .event-dates {
+            font-size: 0.9em;
+            color: #8b949e;
+        }
+
+        .event-actions button {
+            background: none;
+            border: none;
+            color: #58a6ff;
+            cursor: pointer;
+            font-size: 1em;
+            margin-left: 15px;
+            transition: color 0.2s;
+        }
+        
+        .event-actions .delete-button {
+            color: #f85149;
+        }
+
+        .event-actions button:hover {
+            color: #8b949e;
+        }
+
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid #21262d;
+            font-size: 0.8em;
+            color: #8b949e;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">LP</div>
+        <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
+        
+        <div class="user-info">
+            Student — Project Manager 
+            <span class="user-initials">K</span>
+            <a href="index.html" class="sign-out-button">Sign Out</a>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <ul>
+                <li><a href="dashboard.html">🏠 Dashboard</a></li>
+                <li><a href="tasks.html">🗂 Tasks</a></li>
+                <li class="active"><a href="timeline.html">📅 Timeline</a></li>
+                <li><a href="risk-log.html">⚠️ Risk Log</a></li>
+                <li><a href="docs.html">📎 Docs</a></li>
+            </ul>
+        </div>
+        
+        <div class="content">
+            <h1>📅 Project Timeline & Schedule</h1>
+
+            <div class="controls">
+                <div class="filters">
+                    <button class="active">View Month</button>
+                    <button>Filter: Milestones</button>
+                </div>
+                <button id="addEventButton">+ Add Event</button>
+            </div>
+            
+            <div id="eventForm">
+                <input type="hidden" id="editEventIndex">
+                <input type="text" id="eventTitle" placeholder="Event/Phase Title" required>
+                <div style="display: flex; gap: 10px;">
+                    <input type="date" id="eventStartDate" required style="width: 50%;">
+                    <input type="date" id="eventEndDate" required style="width: 50%;">
+                </div>
+                <select id="eventStatus" required>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="current">In Progress</option>
+                    <option value="complete">Complete</option>
+                </select>
+                <div class="form-actions">
+                    <button id="cancelButton" class="cancel-button">Cancel</button>
+                    <button id="saveEventButton" class="save-button">Save Event</button>
+                </div>
+            </div>
+
+            <h2>Detailed Project Roadmap (Gantt View)</h2>
+            <div class="roadmap-container">
+                <div class="roadmap-header">
+                    <div class="event-name">Event/Phase</div>
+                    <div>Week 1</div>
+                    <div>Week 2</div>
+                    <div>Week 3</div>
+                    <div>Week 4</div>
+                    <div>Week 5</div>
+                    <div>Week 6</div>
+                    <div>Week 7</div>
+                    <div>Week 8</div>
+                </div>
+                <div id="roadmapChart">
+                    <div class="roadmap-row" id="default-roadmap-row" style="text-align: center; padding: 20px; color: #8b949e;">
+                        Roadmap will generate upon adding events.
+                    </div>
+                </div>
+            </div>
+
+            <h2>All Events List</h2>
+            <ul class="event-list" id="eventList">
+                </ul>
+            
+            <div class="footer">
+                <p>© Lightweight IT PM — Designed for academic teams</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const addEventButton = document.getElementById('addEventButton');
+        const eventForm = document.getElementById('eventForm');
+        const saveEventButton = document.getElementById('saveEventButton');
+        const cancelButton = document.getElementById('cancelButton');
+        const eventList = document.getElementById('eventList');
+        const roadmapChart = document.getElementById('roadmapChart');
+        const editEventIndexInput = document.getElementById('editEventIndex');
+        const defaultRoadmapRow = document.getElementById('default-roadmap-row');
+
+        // Form Inputs
+        const eventTitleInput = document.getElementById('eventTitle');
+        const eventStartDateInput = document.getElementById('eventStartDate');
+        const eventEndDateInput = document.getElementById('eventEndDate');
+        const eventStatusInput = document.getElementById('eventStatus');
+
+        // --- LOCAL STORAGE: Load events on startup ---
+        function loadEvents() {
+            const eventsJson = localStorage.getItem('projectEvents');
+            // Default data for the first load
+            return eventsJson ? JSON.parse(eventsJson) : [
+                { id: 1, title: 'Project Charter & Planning', start: '2025-11-20', end: '2025-11-24', status: 'complete' },
+                { id: 2, title: 'System Architecture Design', start: '2025-11-24', end: '2025-12-08', status: 'current' },
+                { id: 3, title: 'Database Implementation', start: '2025-12-09', end: '2025-12-23', status: 'upcoming' }
+            ];
+        }
+
+        // --- LOCAL STORAGE: Save events after any change ---
+        function saveEvents() {
+            localStorage.setItem('projectEvents', JSON.stringify(events));
+        }
+
+        let events = loadEvents();
+        let eventCounter = events.length > 0 ? Math.max(...events.map(e => e.id)) + 1 : 4;
+
+        // Helper function to convert date string to Date object
+        const parseDate = (dateString) => new Date(dateString);
+
+        // Helper function to calculate duration in days
+        const calculateDurationDays = (start, end) => {
+            const startDate = parseDate(start);
+            const endDate = parseDate(end);
+            const diffTime = Math.abs(endDate - startDate);
+            // Add 1 day to include the end date
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        };
+
+        // Helper function to show/hide the form and reset state
+        function toggleForm(show = true, reset = true) {
+            if (show) {
+                eventForm.style.display = 'flex';
+                addEventButton.style.display = 'none';
+                if (reset) {
+                    eventTitleInput.value = '';
+                    eventStartDateInput.value = '';
+                    eventEndDateInput.value = '';
+                    eventStatusInput.value = 'upcoming';
+                    editEventIndexInput.value = '';
+                }
+            } else {
+                eventForm.style.display = 'none';
+                addEventButton.style.display = 'block';
+            }
+        }
+        
+        // --- RENDER ROADMAP ---
+        function renderRoadmap() {
+            roadmapChart.innerHTML = ''; // Clear the chart
+
+            if (events.length === 0) {
+                 defaultRoadmapRow.style.display = 'block';
+                 return;
+            }
+
+            defaultRoadmapRow.style.display = 'none';
+            
+            // 1. Determine the overall timeline range (Start Date of Earliest Event, End Date of Latest Event)
+            const allDates = events.flatMap(e => [parseDate(e.start), parseDate(e.end)]);
+            if (allDates.length === 0) return;
+
+            // Use fixed 8 weeks (56 days) for simplicity in this visualization
+            const today = new Date();
+            const projectStart = new Date(today);
+            projectStart.setDate(today.getDate() - today.getDay() + 1); // Start of the current week (Monday)
+            
+            const totalTimelineDays = 8 * 7; // 8 weeks
+
+            events.forEach(event => {
+                const startDate = parseDate(event.start);
+                const endDate = parseDate(event.end);
+
+                // Calculate position (offset) and width (duration) relative to projectStart
+                const offsetDays = Math.max(0, Math.floor((startDate - projectStart) / (1000 * 60 * 60 * 24)));
+                const durationDays = calculateDurationDays(event.start, event.end);
+
+                // Convert days to percentage of the total 8-week timeline
+                const offsetPercent = (offsetDays / totalTimelineDays) * 100;
+                let widthPercent = (durationDays / totalTimelineDays) * 100; // Changed to let
+
+                // Cap the width and ensure it starts after the offset
+                if (widthPercent + offsetPercent > 100) {
+                    // Adjust width if it runs past the end of the 8-week chart
+                    
+                    const clippedWidth = 100 - offsetPercent;
+                    if (clippedWidth > 0) {
+                        widthPercent = clippedWidth;
+                    } else {
+                         // Event starts after the chart ends, don't show it.
+                        return;
+                    }
+                }
+
+                // Create and append the roadmap row
+                const row = document.createElement('div');
+                row.classList.add('roadmap-row');
+                row.innerHTML = `
+                    <div class="roadmap-event-name" title="${event.title}">${event.title}</div>
+                    <div class="roadmap-chart">
+                        <div class="timeline-bar ${event.status}" style="margin-left: ${offsetPercent}%; width: ${widthPercent}%;">
+                            ${durationDays} Days
+                        </div>
+                    </div>
+                `;
+                roadmapChart.appendChild(row);
+            });
+        }
+
+
+        // --- RENDER EVENT LIST ---
+        function renderEvents() {
+            eventList.innerHTML = ''; 
+
+            // Sort by start date (earliest first)
+            const sortedEvents = [...events].sort((a, b) => {
+                return parseDate(a.start) - parseDate(b.start);
+            });
+
+            sortedEvents.forEach((event, index) => {
+                // Find the original index for editing/deleting
+                const originalIndex = events.findIndex(e => e.id === event.id);
+
+                const listItem = document.createElement('li');
+                listItem.classList.add('event-item', event.status);
+                
+                const durationDays = calculateDurationDays(event.start, event.end);
+
+                listItem.innerHTML = `
+                    <div class="event-details-text">
+                        <div class="event-title">${event.title} (${durationDays} Days)</div>
+                        <div class="event-dates">${event.start} — ${event.end} (${event.status.toUpperCase()})</div>
+                    </div>
+                    <div class="event-actions">
+                        <button onclick="editEvent(${originalIndex})">✏️ Edit</button>
+                        <button class="delete-button" onclick="deleteEvent(${originalIndex})">🗑️ Delete</button>
+                    </div>
+                `;
+                eventList.appendChild(listItem);
+            });
+            
+            saveEvents();
+            renderRoadmap(); // Always update the roadmap when the list changes
+        }
+        
+        // --- CRUD LOGIC ---
+
+        function saveEvent() {
+            const title = eventTitleInput.value.trim();
+            const start = eventStartDateInput.value;
+            const end = eventEndDateInput.value;
+            const status = eventStatusInput.value;
+            const index = editEventIndexInput.value;
+
+            if (!title || !start || !end) {
+                alert("Please fill in Title, Start Date, and End Date.");
+                return;
+            }
+            
+            // Basic date validation
+            if (parseDate(start) > parseDate(end)) {
+                 alert("The End Date cannot be before the Start Date.");
+                 return;
+            }
+
+
+            const newEventData = {
+                title: title,
+                start: start,
+                end: end,
+                status: status
+            };
+
+            if (index !== '') {
+                // UPDATE existing event
+                events[parseInt(index)] = { ...events[parseInt(index)], ...newEventData };
+            } else {
+                // ADD new event
+                newEventData.id = eventCounter++;
+                events.push(newEventData);
+            }
+
+            renderEvents();
+            toggleForm(false);
+        }
+
+        function editEvent(index) {
+            const event = events[index];
+            
+            eventTitleInput.value = event.title;
+            eventStartDateInput.value = event.start;
+            eventEndDateInput.value = event.end;
+            eventStatusInput.value = event.status;
+            editEventIndexInput.value = index;
+
+            toggleForm(true, false);
+        }
+        
+        function deleteEvent(index) {
+            if (confirm(`Are you sure you want to delete the event: "${events[index].title}"?`)) {
+                events.splice(index, 1);
+                renderEvents();
+            }
+        }
+
+
+        // --- EVENT LISTENERS ---
+        addEventButton.addEventListener('click', () => toggleForm(true));
+        saveEventButton.addEventListener('click', saveEvent);
+        cancelButton.addEventListener('click', () => toggleForm(false));
+
+        // Initial render when the page loads
+        document.addEventListener('DOMContentLoaded', renderEvents);
+
+    </script>
+
+</body>
+</html>
