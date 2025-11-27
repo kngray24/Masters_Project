@@ -73,7 +73,8 @@
 </form>
 <div id="loginMsg" style="color:#ADD8E6; margin-top:10px;"></div>
         <div class="register-link">
-            Don't have an account? <a href="register.html">Register Here</a> </div>
+            Don't have an account? <a href="register.html">Register Here</a>
+        </div>
     </div>
 <script>
 function loginUser(e) {
@@ -100,7 +101,8 @@ function loginUser(e) {
     // Create session
     localStorage.setItem("LPM_session", "active");
 
-    window.location.href = "dashboard.html";
+    // Redirect to the dashboard upon successful login
+    window.location.href = "dashboard.html"; 
 }
 </script>
 </body>
