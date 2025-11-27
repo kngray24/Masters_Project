@@ -49,7 +49,7 @@
             color: #8b949e;
             display: flex;
             align-items: center;
-            gap: 10px; /* Added gap for sign-out button */
+            gap: 10px;
         }
 
         .user-initials {
@@ -67,8 +67,7 @@
         
         /* --- SIGN OUT BUTTON STYLES (New) --- */
         .sign-out-button {
-            /* Styling to make it look like a discreet action button */
-            background-color: #f44336; /* Red background for sign-out/danger */
+            background-color: #f44336;
             color: white;
             border: none;
             padding: 5px 10px;
@@ -87,7 +86,7 @@
         /* --- Sidebar & Main Layout --- */
         .main-layout {
             display: flex;
-            height: calc(100vh - 45px); /* Full viewport height minus header */
+            height: calc(100vh - 45px);
         }
 
         .sidebar {
@@ -160,7 +159,7 @@
 
         #logNewRiskButton {
             padding: 10px 15px;
-            background-color: #9a6700; /* Amber for risk action */
+            background-color: #9a6700;
             color: white;
             border: none;
             border-radius: 4px;
@@ -289,7 +288,6 @@
             font-size: 0.8em;
             color: #8b949e;
         }
-
     </style>
 </head>
 <body>
@@ -298,9 +296,9 @@
         <div class="logo">LP</div>
         <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
         <div class="user-info">
-            Student — Project Manager 
-            <span class="user-initials">K</span>
-            <a href="index.html" class="sign-out-button">Sign Out</a>
+            <span id="userNameDisplay">Loading...</span> 
+            <span class="user-initials" id="userInitialsDisplay">?</span>
+            <button class="sign-out-button" onclick="signOutUser()">Sign Out</button>
         </div>
     </div>
 
@@ -321,14 +319,12 @@
             <div class="controls">
                 <div class="filters">
                     <button class="active" data-filter="all">Filter: All Risks</button>
-                    <button data-filter="high">Filter: High Priority</button>
-                    <button data-filter="active">Filter: Active</button>
                 </div>
                 <button id="logNewRiskButton">+ Log New Risk</button>
             </div>
             
             <div id="riskForm">
-                <input type="hidden" id="editRiskIndex">
+                <input type="hidden" id="editRiskDocId"> 
                 <input type="text" id="riskDescription" placeholder="Risk Description (What could happen?)" required>
                 <div style="display: flex; gap: 10px;">
                     <select id="riskImpact" required style="width: 33%;">
@@ -374,7 +370,7 @@
                     <tbody id="riskTableBody">
                         </tbody>
                 </table>
-                <p id="emptyMessage" style="text-align: center; color: #8b949e; padding: 20px;">No risks logged yet. Click "+ Log New Risk" to start.</p>
+                <p id="emptyMessage" style="text-align: center; color: #8b949e; padding: 20px;">Loading risks...</p>
             </div>
             
             <div class="footer">
@@ -383,14 +379,39 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+
     <script>
+        // Your Firebase Configuration (Copied from Dashboard)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
+            authDomain: "masters-project-kenneth.firebaseapp.com",
+            projectId: "masters-project-kenneth",
+            storageBucket: "masters-project-kenneth.appspot.com", 
+            messagingSenderId: "685736871672",
+            appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let userId = null;
+        let risks = []; // Global array to hold risks fetched from Firestore
+
+        // DOM Elements
         const logNewRiskButton = document.getElementById('logNewRiskButton');
         const riskForm = document.getElementById('riskForm');
         const saveRiskButton = document.getElementById('saveRiskButton');
         const cancelButton = document.getElementById('cancelButton');
         const riskTableBody = document.getElementById('riskTableBody');
         const emptyMessage = document.getElementById('emptyMessage');
-        const editRiskIndexInput = document.getElementById('editRiskIndex');
+        const editRiskDocIdInput = document.getElementById('editRiskDocId');
 
         // Form Inputs
         const riskDescriptionInput = document.getElementById('riskDescription');
@@ -400,25 +421,62 @@
         const riskMitigationInput = document.getElementById('riskMitigation');
         const riskStatusInput = document.getElementById('riskStatus');
 
-        // --- LOCAL STORAGE: Load risks on startup ---
-        function loadRisks() {
-            const risksJson = localStorage.getItem('projectRisks');
-            // If data exists, parse it. If not, return the initial example data.
-            return risksJson ? JSON.parse(risksJson) : [
-                { id: 'R-001', description: 'Authentication system development delays', impact: 'high', probability: 'medium', owner: 'Priya', mitigation: 'Add retry logic and use external library.', status: 'active' },
-                { id: 'R-002', description: 'Team member illness impacting implementation.', impact: 'medium', probability: 'high', owner: 'Project Manager', mitigation: 'Cross-train as key modules (ongoing).', status: 'monitored' },
-                { id: 'R-003', description: 'Scope creep from client feedback.', impact: 'low', probability: 'medium', owner: 'Omar', mitigation: 'Strict change control process (in place).', status: 'active' }
-            ];
+        // --- AUTHENTICATION & INITIALIZATION ---
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                userId = user.uid;
+                
+                // Update UI with user info
+                document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
+                document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
+
+                // Start loading real-time data
+                setupFirestoreListener();
+
+                // Pre-fill owner input with user info
+                if (!riskOwnerInput.value) {
+                    riskOwnerInput.value = user.displayName || user.email.split('@')[0];
+                }
+
+            } else {
+                console.log("No user signed in. Redirecting to login.");
+                window.location.href = "index.html";
+            }
+        });
+
+        function signOutUser() {
+            auth.signOut().then(() => {
+                localStorage.removeItem("LPM_session");
+                localStorage.removeItem("LPM_user_uid");
+                window.location.href = "index.html";
+            });
         }
 
-        // --- LOCAL STORAGE: Save risks after any change ---
-        function saveRisks() {
-            localStorage.setItem('projectRisks', JSON.stringify(risks));
+        // --- FIRESTORE REAL-TIME LISTENER ---
+
+        function setupFirestoreListener() {
+            if (!userId) return;
+
+            // Sort risks by high impact/probability and creation time for consistent display
+            db.collection(`users/${userId}/risks`)
+                .orderBy("impact", "desc")
+                .orderBy("probability", "desc")
+                .orderBy("createdAt", "desc") 
+                .onSnapshot(snapshot => {
+                    risks = snapshot.docs.map(doc => ({ 
+                        id: doc.id, // Use Firestore document ID as the unique ID
+                        ...doc.data() 
+                    }));
+                    renderRisks(); // Re-render the table with the new data
+                }, error => {
+                    console.error("Error fetching risks:", error);
+                    emptyMessage.textContent = 'Error loading risks. Check your Firebase Security Rules!';
+                });
         }
 
-        let risks = loadRisks();
-        let riskCounter = risks.length > 0 ? Math.max(...risks.map(r => parseInt(r.id.split('-')[1]))) + 1 : 4;
 
+        // --- UI & CRUD LOGIC ---
 
         // Helper function to show/hide the form and reset state
         function toggleForm(show = true, reset = true) {
@@ -429,10 +487,11 @@
                     riskDescriptionInput.value = '';
                     riskImpactInput.value = '';
                     riskProbabilityInput.value = '';
-                    riskOwnerInput.value = '';
+                    riskOwnerInput.value = auth.currentUser ? auth.currentUser.displayName || auth.currentUser.email.split('@')[0] : '';
                     riskMitigationInput.value = '';
                     riskStatusInput.value = 'active';
-                    editRiskIndexInput.value = '';
+                    editRiskDocIdInput.value = '';
+                    saveRiskButton.textContent = 'Save Risk';
                 }
             } else {
                 riskForm.style.display = 'none';
@@ -440,22 +499,24 @@
             }
         }
         
-        // --- RENDER FUNCTION ---
+        // --- RENDER FUNCTION (UPDATED) ---
         function renderRisks() {
             riskTableBody.innerHTML = ''; 
 
             if (risks.length === 0) {
+                emptyMessage.textContent = 'No risks logged yet. Click "+ Log New Risk" to start.';
                 emptyMessage.style.display = 'block';
                 return;
             } else {
                 emptyMessage.style.display = 'none';
             }
 
-            risks.forEach((risk, index) => {
+            risks.forEach(risk => {
                 const row = riskTableBody.insertRow();
                 
+                // Note: risk.id is now the Firestore Document ID
                 row.innerHTML = `
-                    <td>${risk.id}</td>
+                    <td>${risk.id.substring(0, 5)}...</td> 
                     <td>${risk.description}</td>
                     <td><span class="risk-status impact ${risk.impact}">${risk.impact}</span></td>
                     <td><span class="risk-status probability ${risk.probability}">${risk.probability}</span></td>
@@ -463,30 +524,33 @@
                     <td>${risk.mitigation}</td>
                     <td>${risk.status}</td>
                     <td class="risk-actions">
-                        <button onclick="editRisk(${index})">✏️</button>
-                        <button onclick="deleteRisk(${index})">🗑️</button>
+                        <button onclick="editRisk('${risk.id}')">✏️</button>
+                        <button onclick="deleteRisk('${risk.id}', '${risk.description}')">🗑️</button>
                     </td>
                 `;
             });
-            
-            saveRisks();
         }
         
-        // --- CRUD LOGIC ---
+        // --- CRUD LOGIC (UPDATED FOR FIRESTORE) ---
 
-        function saveRisk() {
+        async function saveRisk() {
+            if (!userId) return alert("User not authenticated.");
+
             const description = riskDescriptionInput.value.trim();
             const impact = riskImpactInput.value;
             const probability = riskProbabilityInput.value;
             const owner = riskOwnerInput.value.trim();
             const mitigation = riskMitigationInput.value.trim();
             const status = riskStatusInput.value;
-            const index = editRiskIndexInput.value;
+            const docId = editRiskDocIdInput.value;
 
             if (!description || !impact || !probability || !owner) {
                 alert("Please fill in Description, Impact, Probability, and Owner.");
                 return;
             }
+            
+            saveRiskButton.disabled = true;
+            saveRiskButton.textContent = 'Saving...';
 
             const newRiskData = {
                 description: description,
@@ -494,24 +558,32 @@
                 probability: probability,
                 owner: owner,
                 mitigation: mitigation,
-                status: status
+                status: status,
             };
 
-            if (index !== '') {
-                // UPDATE existing risk
-                risks[parseInt(index)] = { ...risks[parseInt(index)], ...newRiskData };
-            } else {
-                // ADD new risk
-                newRiskData.id = `R-${String(riskCounter++).padStart(3, '0')}`;
-                risks.push(newRiskData);
+            try {
+                if (docId) {
+                    // UPDATE existing risk
+                    await db.collection(`users/${userId}/risks`).doc(docId).update(newRiskData);
+                } else {
+                    // ADD new risk
+                    newRiskData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection(`users/${userId}/risks`).add(newRiskData);
+                }
+                toggleForm(false); // Close form, Firestore listener handles the table update
+            } catch (error) {
+                console.error("Error saving risk:", error);
+                alert(`Failed to save risk: ${error.message}.`);
+            } finally {
+                saveRiskButton.disabled = false;
+                saveRiskButton.textContent = 'Save Risk';
             }
-
-            renderRisks();
-            toggleForm(false);
         }
 
-        function editRisk(index) {
-            const risk = risks[index];
+        // Expose to window for inline onclick handler
+        window.editRisk = function(docId) {
+            const risk = risks.find(r => r.id === docId);
+            if (!risk) return;
             
             riskDescriptionInput.value = risk.description;
             riskImpactInput.value = risk.impact;
@@ -519,15 +591,23 @@
             riskOwnerInput.value = risk.owner;
             riskMitigationInput.value = risk.mitigation;
             riskStatusInput.value = risk.status;
-            editRiskIndexInput.value = index;
+            editRiskDocIdInput.value = docId;
 
+            saveRiskButton.textContent = 'Update Risk';
             toggleForm(true, false);
         }
         
-        function deleteRisk(index) {
-            if (confirm(`Are you sure you want to delete risk ${risks[index].id}: "${risks[index].description}"?`)) {
-                risks.splice(index, 1);
-                renderRisks();
+        // Expose to window for inline onclick handler
+        window.deleteRisk = async function(docId, description) {
+            if (!userId) return alert("User not authenticated.");
+            if (confirm(`Are you sure you want to delete risk: "${description}"? This cannot be undone.`)) {
+                try {
+                    await db.collection(`users/${userId}/risks`).doc(docId).delete();
+                    // Success! Firestore listener will update the table.
+                } catch (error) {
+                    console.error("Error deleting risk:", error);
+                    alert("Failed to delete risk: " + error.message);
+                }
             }
         }
 
@@ -537,9 +617,7 @@
         saveRiskButton.addEventListener('click', saveRisk);
         cancelButton.addEventListener('click', () => toggleForm(false));
 
-        // Initial render when the page loads
-        document.addEventListener('DOMContentLoaded', renderRisks);
-
+        // Note: Initial render is now handled by the Firestore listener (setupFirestoreListener)
     </script>
 
 </body>
