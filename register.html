@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightweight IT PM — Register</title>
+    <link rel="stylesheet" href="style.css"> 
+    <style>
+        /* Styles included here for guaranteed dark background and centered card */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #121212; /* Dark background matching the login screen */
+            color: #E0E0E0;
+        }
+        .register-container {
+            background-color: #1f2a3a; /* Card background color */
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            width: 350px;
+            text-align: center;
+        }
+        .register-container h2 {
+            color: #ADD8E6; /* Light blue accent */
+            margin-bottom: 25px;
+        }
+        .register-container input[type="text"],
+        .register-container input[type="email"],
+        .register-container input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+            box-sizing: border-box;
+        }
+        .register-container button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50; /* Green accent for primary action */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .register-container button:hover {
+            background-color: #45A049;
+        }
+        .login-link {
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        .login-link a {
+            color: #ADD8E6;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h2>Create Your Account</h2>
+       <form onsubmit="registerUser(event)">
+    <input type="text" id="regUsername" placeholder="Username" required>
+    <input type="email" id="regEmail" placeholder="Email Address" required>
+    <input type="password" id="regPassword" placeholder="Password" required>
+    <input type="password" id="regConfirm" placeholder="Confirm Password" required>
+    <button type="submit">Register and Proceed to Login</button>
+</form>
+<div id="regMsg" style="color:#ADD8E6; margin-top:10px;"></div>
+        <div class="login-link">
+            Already have an account? <a href="login.html">Log In Here</a>
+        </div>
+    </div>
+
+<script>
+function registerUser(e) {
+    e.preventDefault();
+
+    const username = document.getElementById("regUsername").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const pass = document.getElementById("regPassword").value;
+    const pass2 = document.getElementById("regConfirm").value;
+
+    if (pass !== pass2) {
+        document.getElementById("regMsg").textContent = "Passwords do not match.";
+        return;
+    }
+
+    const user = { username, email, password: pass };
+
+    localStorage.setItem("LPM_user", JSON.stringify(user));
+
+    document.getElementById("regMsg").textContent = "Account created! Redirecting to login...";
+    setTimeout(() => {
+        window.location.href = "login.html";
+    }, 1500);
+}
+</script>
+</body>
+</html>
