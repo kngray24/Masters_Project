@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lightweight IT PM — Risk Log</title>
+    <link rel="stylesheet" href="style.css"> 
     <style>
-        /* --- General Layout and Dark Theme (for consistency) --- */
+        /* (Placeholder styles - replace or merge with your actual styles) */
         body {
             font-family: Arial, sans-serif;
             background-color: #0d1117;
@@ -13,7 +14,6 @@
             margin: 0;
             padding: 0;
         }
-
         .header {
             background-color: #161b22;
             padding: 10px 20px;
@@ -21,1316 +21,158 @@
             align-items: center;
             border-bottom: 1px solid #21262d;
         }
-
-        .logo {
-            background-color: #58a6ff;
-            color: #0d1117;
-            font-weight: bold;
-            padding: 5px 10px;
-            border-radius: 4px;
-            margin-right: 15px;
-        }
-
-        h2 {
-            font-size: 1.2em;
-            margin: 0;
-        }
-
-        .project-info {
-            font-weight: normal;
-            color: #8b949e;
-            font-size: 0.9em;
-            margin-left: 10px;
-        }
-
-        .user-info {
+        .signout-btn {
             margin-left: auto;
-            font-size: 0.9em;
-            color: #8b949e;
-            display: flex;
-            align-items: center;
-            gap: 10px; /* Added gap for sign-out button */
-        }
-
-        .user-initials {
-            background-color: #58a6ff;
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.8em;
-            margin-left: 8px;
-        }
-
-        /* --- SIGN OUT BUTTON STYLES --- */
-        .signout-btn { /* Changed class name for consistency */
-            background-color: #f44336; /* Red background for sign-out/danger */
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 14px;
-            border-radius: 4px;
+            background-color: #30363d;
+            color: #f85149;
+            border: 1px solid #f85149;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            font-size: 0.85em;
         }
-        .signout-btn:hover {
-            background-color: #d32f2f;
-        }
-
-        /* --- Sidebar & Main Layout --- */
-        .main-layout {
-            display: flex;
-            height: calc(100vh - 45px); /* Full viewport height minus header */
-        }
-
-        .sidebar {
-            width: 200px;
-            background-color: #161b22;
-            padding: 20px 0;
-            border-right: 1px solid #21262d;
-        }
-
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .sidebar li a {
-            display: block;
-            padding: 10px 20px;
-            text-decoration: none;
-            color: #c9d1d9;
-            transition: background-color 0.2s;
-            font-weight: 500;
-        }
-
-        .sidebar li a:hover, .sidebar li.active a {
-            background-color: #21262d;
-            color: #58a6ff;
-        }
-
-        .sidebar li.active a {
-            border-left: 3px solid #58a6ff;
-            padding-left: 17px;
-        }
-
         .content {
-            flex-grow: 1;
             padding: 20px;
-            overflow-y: auto;
         }
-
-        h1 {
-            color: #58a6ff;
-            border-bottom: 2px solid #21262d;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        /* --- Risk Log Specific Styles --- */
-        .controls {
+        h1 { color: #58a6ff; }
+        .risk-item {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
         }
-
-        .filters button {
-            padding: 8px 15px;
-            margin-right: 10px;
-            background-color: #21262d;
-            color: #c9d1d9;
-            border: 1px solid #30363d;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .filters button:hover, .filters button.active {
-            background-color: #30363d;
-        }
-
-        #logNewRiskButton {
-            padding: 10px 15px;
-            background-color: #9a6700; /* Amber for risk action */
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-
-        #logNewRiskButton:hover {
-            background-color: #a77717;
-        }
-
-        /* Risk Form Styling */
-        #riskForm {
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding: 20px;
-            background-color: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-        }
-
-        #riskForm input[type="text"], #riskForm select, #riskForm textarea {
-            padding: 10px;
-            border: 1px solid #30363d;
-            border-radius: 4px;
-            background-color: #0d1117;
-            color: #c9d1d9;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .save-button, .cancel-button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .save-button {
-            background-color: #58a6ff;
-            color: white;
-        }
-
-        .cancel-button {
-            background-color: #30363d;
-            color: #c9d1d9;
-        }
-
-        /* Risk Table Styling */
-        .risk-table-container {
-            overflow-x: auto;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            background-color: #161b22;
-        }
-
-        .risk-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-
-        .risk-table th, .risk-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #21262d;
-        }
-
-        .risk-table th {
-            background-color: #21262d;
-            color: #8b949e;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .risk-table tr:hover {
-            background-color: #1f2a37;
-        }
-
-        /* Status/Impact styling */
-        .risk-status-badge { /* Renamed for clarity vs. risk-status class on filter buttons */
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 0.8em;
-            font-weight: bold;
-            display: inline-block;
-            text-transform: capitalize;
-        }
-
-        .impact.high, .probability.high { background-color: #5c2c31; color: #f85149; }
-        .impact.medium, .probability.medium { background-color: #55441d; color: #d29922; }
-        .impact.low, .probability.low { background-color: #1d3329; color: #3fb950; }
-
-        .risk-status-badge.active { background-color: #55441d; color: #d29922; }
-        .risk-status-badge.monitored { background-color: #1d3329; color: #3fb950; }
-        .risk-status-badge.retired { background-color: #30363d; color: #8b949e; }
-
-        .risk-actions button {
-            background: none;
-            border: none;
-            color: #58a6ff;
-            cursor: pointer;
-            margin-left: 8px;
-        }
-
-        .risk-actions button:hover {
-            color: #8b949e;
-        }
-
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            padding-top: 15px;
-            border-top: 1px solid #21262d;
-            font-size: 0.8em;
-            color: #8b949e;
-        }
-
+        /* Risk level colors */
+        .risk-high { color: #f85149; font-weight: bold; }
+        .risk-medium { color: #d29922; font-weight: bold; }
+        .risk-low { color: #3fb950; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">LP</div>
-        <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
-        <div class="user-info">
-            <span id="userNameDisplay">Loading...</span>
-            <span class="user-initials" id="userInitialsDisplay">?</span>
-            <button class="signout-btn" onclick="signOutUser()">Sign Out</button>
-        </div>
+        <h2>⚠️ Project Risk Log</h2>
+        <button class="signout-btn" onclick="signOutUser()">Sign Out</button>
     </div>
 
-    <div class="main-layout">
-        <div class="sidebar">
-            <ul>
-                <li><a href="dashboard.html">🏠 Dashboard</a></li>
-                <li><a href="tasks.html">🗂 Tasks</a></li>
-                <li><a href="timeline.html">📅 Timeline</a></li>
-                <li class="active"><a href="risk-log.html">⚠️ Risk Log</a></li>
-                <li><a href="docs.html">📎 Docs</a></li>
-            </ul>
-        </div>
-
-        <div class="content">
-            <h1>⚠️ Project Risk Log</h1>
-
-            <div class="controls">
-                <div class="filters" id="riskFilters">
-                    <button class="active" data-filter="all">Filter: All Risks</button>
-                    <button data-filter="high-impact">Filter: High Impact</button>
-                    <button data-filter="active">Filter: Active</button>
-                </div>
-                <button id="logNewRiskButton">+ Log New Risk</button>
+    <div class="content">
+        <h1>Active Project Risks</h1>
+        <div id="loadingMsg" style="color:#ADD8E6;">Loading and verifying session...</div>
+        
+        <div id="risksList" style="display:none;">
             </div>
 
-            <div id="riskForm">
-                <input type="hidden" id="editRiskId"> <!-- Changed from editRiskIndex -->
-                <input type="text" id="riskDescription" placeholder="Risk Description (What could happen?)" required>
-                <div style="display: flex; gap: 10px;">
-                    <select id="riskImpact" required style="width: 33%;">
-                        <option value="">-- Select Impact --</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                    </select>
-                    <select id="riskProbability" required style="width: 33%;">
-                        <option value="">-- Select Probability --</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                    </select>
-                    <input type="text" id="riskOwner" placeholder="Owner (e.g., Priya)" required style="width: 33%;">
-                </div>
-                <textarea id="riskMitigation" placeholder="Mitigation Strategy (What will we do to prevent/reduce impact?)" rows="3"></textarea>
-                <select id="riskStatus" required>
-                    <option value="active">Active</option>
-                    <option value="monitored">Monitored</option>
-                    <option value="retired">Retired</option>
-                </select>
-                <div class="form-actions">
-                    <button id="cancelButton" class="cancel-button">Cancel</button>
-                    <button id="saveRiskButton" class="save-button">Save Risk</button>
-                </div>
-            </div>
-
-            <div class="risk-table-container">
-                <table class="risk-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th style="width: 30%;">Description</th>
-                            <th>Impact</th>
-                            <th>Probability</th>
-                            <th>Owner</th>
-                            <th style="width: 30%;">Mitigation Strategy</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="riskTableBody">
-                        <!-- Risks will be rendered here -->
-                    </tbody>
-                </table>
-                <p id="emptyMessage" style="text-align: center; color: #8b949e; padding: 20px; display: none;">No risks logged yet. Click "+ Log New Risk" to start.</p>
-                <p id="loadingMessage" style="text-align: center; color: #8b949e; padding: 20px;">Loading risks...</p>
-            </div>
-
-            <div class="footer">
-                <p>© Lightweight IT PM — Designed for academic teams</p>
-            </div>
-        </div>
+        <p id="noRisksMsg" style="display:none; text-align:center; color:#8b949e; margin-top: 30px;">
+            No active risks found in the database.
+        </p>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
 
-    <script>
-        // Your Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
-            authDomain: "masters-project-kenneth.firebaseapp.com",
-            projectId: "masters-project-kenneth",
-            storageBucket: "masters-project-kenneth.firebasestorage.app",
-            messagingSenderId: "685736871672",
-            appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
-        };
+<script>
+    // YOUR FIREBASE CONFIGURATION
+    const firebaseConfig = {
+        apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
+        authDomain: "masters-project-kenneth.firebaseapp.com",
+        projectId: "masters-project-kenneth",
+        storageBucket: "masters-project-kenneth.firebasestorage.app",
+        messagingSenderId: "685736871672",
+        appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
+    };
 
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+    // Initialize Firebase Services
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-        let currentUser = null;
-        let userId = null;
-        let unsubscribeRisks = null; // To hold the unsubscribe function for the risks listener
-        let currentFilter = 'all'; // Default filter
+    // --- Core Functions ---
 
-        const logNewRiskButton = document.getElementById('logNewRiskButton');
-        const riskForm = document.getElementById('riskForm');
-        const saveRiskButton = document.getElementById('saveRiskButton');
-        const cancelButton = document.getElementById('cancelButton');
-        const riskTableBody = document.getElementById('riskTableBody');
-        const emptyMessage = document.getElementById('emptyMessage');
-        const loadingMessage = document.getElementById('loadingMessage');
-        const editRiskIdInput = document.getElementById('editRiskId');
-        const riskFilters = document.getElementById('riskFilters');
+    function getRiskColorClass(level) {
+        const normalizedLevel = level.toLowerCase().trim();
+        if (normalizedLevel === 'high') return 'risk-high';
+        if (normalizedLevel === 'medium') return 'risk-medium';
+        if (normalizedLevel === 'low') return 'risk-low';
+        return '';
+    }
 
-        // Form Inputs
-        const riskDescriptionInput = document.getElementById('riskDescription');
-        const riskImpactInput = document.getElementById('riskImpact');
-        const riskProbabilityInput = document.getElementById('riskProbability');
-        const riskOwnerInput = document.getElementById('riskOwner');
-        const riskMitigationInput = document.getElementById('riskMitigation');
-        const riskStatusInput = document.getElementById('riskStatus');
-
-        // --- AUTHENTICATION CHECK ---
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                currentUser = user;
-                userId = user.uid;
-
-                document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
-                document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
-
-                setupRiskListener(); // Start listening for risks once user is authenticated
-
-            } else {
-                console.log("No user signed in. Redirecting to login.");
-                window.location.href = "index.html";
-            }
+    function signOutUser() {
+        auth.signOut().then(() => {
+            // Sign-out successful, clear session storage and redirect
+            localStorage.removeItem("LPM_session");
+            localStorage.removeItem("LPM_user_uid"); 
+            window.location.href = "index.html"; 
+        }).catch((error) => {
+            console.error("Sign Out Error:", error);
+            alert("Sign Out failed. See console for details.");
         });
+    }
 
-        function signOutUser() {
-            auth.signOut().then(() => {
-                localStorage.removeItem("LPM_session");
-                localStorage.removeItem("LPM_user_uid");
-                if (unsubscribeRisks) {
-                    unsubscribeRisks();
+    function loadRisksFromFirestore() {
+        const risksList = document.getElementById('risksList');
+        const loadingMsg = document.getElementById('loadingMsg');
+        const noRisksMsg = document.getElementById('noRisksMsg');
+        
+        loadingMsg.textContent = "Loading risks...";
+        risksList.innerHTML = ''; // Clear previous risks
+
+        // Fetches ALL risks from the 'risks' collection
+        db.collection("risks").get()
+            .then((querySnapshot) => {
+                loadingMsg.style.display = 'none';
+                risksList.style.display = 'block';
+
+                if (querySnapshot.empty) {
+                    noRisksMsg.style.display = 'block';
+                    return;
                 }
-                window.location.href = "index.html";
-            }).catch((error) => {
-                console.error("Error signing out:", error);
-                alert("Error signing out: " + error.message);
+                
+                querySnapshot.forEach((doc) => {
+                    const risk = doc.data();
+                    
+                    const item = document.createElement('div');
+                    item.classList.add('risk-item');
+                    
+                    const impactClass = getRiskColorClass(risk.impact || 'low');
+                    const probabilityClass = getRiskColorClass(risk.probability || 'low');
+
+                    item.innerHTML = `
+                        <div>
+                            <strong>${risk.description || 'Untitled Risk'}</strong><br>
+                            Owner: ${risk.owner || 'N/A'}
+                        </div>
+                        <div>
+                            Impact: <span class="${impactClass}">${risk.impact || 'N/A'}</span> | 
+                            Probability: <span class="${probabilityClass}">${risk.probability || 'N/A'}</span>
+                        </div>
+                    `;
+                    risksList.appendChild(item);
+                });
+            })
+            .catch((error) => {
+                console.error("Error loading risks:", error);
+                loadingMsg.textContent = "Error loading risks from Firebase. Check console and security rules.";
+                loadingMsg.style.color = '#f85149';
             });
+    }
+
+    // --- Authentication Check ---
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // User is signed in, proceed to load data
+            loadRisksFromFirestore();
+        } else {
+            // No user is signed in, redirect to login
+            console.log("No user signed in. Redirecting.");
+            window.location.href = "index.html";
         }
+    });
 
-        // --- FIRESTORE RISK OPERATIONS ---
-
-        function setupRiskListener() {
-            if (!userId) {
-                console.error("User ID not available for risk listener.");
-                return;
-            }
-
-            if (unsubscribeRisks) {
-                unsubscribeRisks(); // Unsubscribe from previous listener
-            }
-
-            loadingMessage.style.display = 'block';
-            emptyMessage.style.display = 'none';
-            riskTableBody.innerHTML = ''; // Clear existing table rows
-
-            let query = db.collection(`users/${userId}/risks`);
-
-            // Apply filters based on currentFilter state
-            if (currentFilter === 'high-impact') {
-                query = query.where('impact', '==', 'high');
-            } else if (currentFilter === 'active') {
-                query = query.where('status', '==', 'active');
-            }
-
-            // Order by impact and probability (descending for high first)
-            query = query.orderBy('impact', 'desc').orderBy('probability', 'desc').orderBy('createdAt', 'desc');
-
-            unsubscribeRisks = query.onSnapshot(snapshot => {
-                const risks = snapshot.docs.map(doc => ({
-                    id: doc.id, // Firestore document ID
-                    ...doc.data()
-                }));
-                renderRisks(risks);
-                loadingMessage.style.display = 'none'; // Hide loading message after data is rendered
-            }, error => {
-                console.error("Error fetching risks:", error);
-                riskTableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#f85149;">Error loading risks.</td></tr>';
-                loadingMessage.style.display = 'none';
-            });
-        }
-
-        // Helper function to show/hide the form and reset state
-        function toggleForm(show = true, riskData = null) {
-            if (show) {
-                riskForm.style.display = 'flex';
-                logNewRiskButton.style.display = 'none';
-
-                if (riskData) { // Editing an existing risk
-                    editRiskIdInput.value = riskData.id;
-                    riskDescriptionInput.value = riskData.description;
-                    riskImpactInput.value = riskData.impact;
-                    riskProbabilityInput.value = riskData.probability;
-                    riskOwnerInput.value = riskData.owner;
-                    riskMitigationInput.value = riskData.mitigation;
-                    riskStatusInput.value = riskData.status;
-                } else { // Adding a new risk
-                    editRiskIdInput.value = '';
-                    riskDescriptionInput.value = '';
-                    riskImpactInput.value = '';
-                    riskProbabilityInput.value = '';
-                    riskOwnerInput.value = currentUser ? (currentUser.displayName || currentUser.email) : ''; // Pre-fill owner
-                    riskMitigationInput.value = '';
-                    riskStatusInput.value = 'active';
-                }
-            } else { // Hiding the form
-                riskForm.style.display = 'none';
-                logNewRiskButton.style.display = 'block';
-                // Reset form fields completely
-                editRiskIdInput.value = '';
-                riskDescriptionInput.value = '';
-                riskImpactInput.value = '';
-                riskProbabilityInput.value = '';
-                riskOwnerInput.value = '';
-                riskMitigationInput.value = '';
-                riskStatusInput.value = 'active';
-            }
-        }
-
-        // --- RENDER FUNCTION ---
-        function renderRisks(risks) { // Takes risks array as argument
-            riskTableBody.innerHTML = '';
-
-            if (risks.length === 0) {
-                emptyMessage.style.display = 'block';
-            } else {
-                emptyMessage.style.display = 'none';
-            }
-
-            risks.forEach(risk => {
-                const row = riskTableBody.insertRow();
-                // Truncate Firestore ID for display or use a more human-readable unique code
-                const displayId = risk.id.substring(0, 6) + '...';
-
-                row.innerHTML = `
-                    <td>${displayId}</td>
-                    <td>${risk.description}</td>
-                    <td><span class="risk-status-badge impact ${risk.impact}">${risk.impact}</span></td>
-                    <td><span class="risk-status-badge probability ${risk.probability}">${risk.probability}</span></td>
-                    <td>${risk.owner}</td>
-                    <td>${risk.mitigation}</td>
-                    <td><span class="risk-status-badge ${risk.status}">${risk.status}</span></td>
-                    <td class="risk-actions">
-                        <button onclick="editRisk('${risk.id}')">✏️</button>
-                        <button onclick="deleteRisk('${risk.id}')">🗑️</button>
-                    </td>
-                `;
-            });
-        }
-
-        // --- CRUD LOGIC ---
-
-        async function saveRisk() {
-            const description = riskDescriptionInput.value.trim();
-            const impact = riskImpactInput.value;
-            const probability = riskProbabilityInput.value;
-            const owner = riskOwnerInput.value.trim();
-            const mitigation = riskMitigationInput.value.trim();
-            const status = riskStatusInput.value;
-            const riskId = editRiskIdInput.value;
-
-            if (!description || !impact || !probability || !owner) {
-                alert("Please fill in Description, Impact, Probability, and Owner.");
-                return;
-            }
-
-            const riskData = {
-                description: description,
-                impact: impact,
-                probability: probability,
-                owner: owner,
-                mitigation: mitigation,
-                status: status
-            };
-
-            try {
-                if (riskId) {
-                    // UPDATE existing risk
-                    await db.collection(`users/${userId}/risks`).doc(riskId).update(riskData);
-                } else {
-                    // ADD new risk
-                    await db.collection(`users/${userId}/risks`).add({
-                        ...riskData,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                }
-                toggleForm(false); // Hide and reset form
-            } catch (error) {
-                console.error("Error saving risk:", error);
-                alert("Failed to save risk: " + error.message);
-            }
-        }
-
-        window.editRisk = async (riskId) => {
-            try {
-                const doc = await db.collection(`users/${userId}/risks`).doc(riskId).get();
-                if (doc.exists) {
-                    toggleForm(true, { id: doc.id, ...doc.data() });
-                } else {
-                    console.warn("Risk not found for editing:", riskId);
-                    alert("Risk not found.");
-                }
-            } catch (error) {
-                console.error("Error fetching risk for edit:", error);
-                alert("Failed to load risk for editing: " + error.message);
-            }
-        };
-
-        window.deleteRisk = async (riskId) => {
-            if (confirm(`Are you sure you want to delete this risk?`)) {
-                try {
-                    await db.collection(`users/${userId}/risks`).doc(riskId).delete();
-                } catch (error) {<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lightweight IT PM — Risk Log</title>
-    <style>
-        /* --- General Layout and Dark Theme (for consistency) --- */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #0d1117;
-            color: #c9d1d9;
-            margin: 0;
-            padding: 0;
-        }
-
-        .header {
-            background-color: #161b22;
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid #21262d;
-        }
-
-        .logo {
-            background-color: #58a6ff;
-            color: #0d1117;
-            font-weight: bold;
-            padding: 5px 10px;
-            border-radius: 4px;
-            margin-right: 15px;
-        }
-
-        h2 {
-            font-size: 1.2em;
-            margin: 0;
-        }
-
-        .project-info {
-            font-weight: normal;
-            color: #8b949e;
-            font-size: 0.9em;
-            margin-left: 10px;
-        }
-
-        .user-info {
-            margin-left: auto;
-            font-size: 0.9em;
-            color: #8b949e;
-            display: flex;
-            align-items: center;
-            gap: 10px; /* Added gap for sign-out button */
-        }
-
-        .user-initials {
-            background-color: #58a6ff;
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.8em;
-            margin-left: 8px;
-        }
-
-        /* --- SIGN OUT BUTTON STYLES --- */
-        .signout-btn { /* Changed class name for consistency */
-            background-color: #f44336; /* Red background for sign-out/danger */
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .signout-btn:hover {
-            background-color: #d32f2f;
-        }
-
-        /* --- Sidebar & Main Layout --- */
-        .main-layout {
-            display: flex;
-            height: calc(100vh - 45px); /* Full viewport height minus header */
-        }
-
-        .sidebar {
-            width: 200px;
-            background-color: #161b22;
-            padding: 20px 0;
-            border-right: 1px solid #21262d;
-        }
-
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .sidebar li a {
-            display: block;
-            padding: 10px 20px;
-            text-decoration: none;
-            color: #c9d1d9;
-            transition: background-color 0.2s;
-            font-weight: 500;
-        }
-
-        .sidebar li a:hover, .sidebar li.active a {
-            background-color: #21262d;
-            color: #58a6ff;
-        }
-
-        .sidebar li.active a {
-            border-left: 3px solid #58a6ff;
-            padding-left: 17px;
-        }
-
-        .content {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        h1 {
-            color: #58a6ff;
-            border-bottom: 2px solid #21262d;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        /* --- Risk Log Specific Styles --- */
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .filters button {
-            padding: 8px 15px;
-            margin-right: 10px;
-            background-color: #21262d;
-            color: #c9d1d9;
-            border: 1px solid #30363d;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .filters button:hover, .filters button.active {
-            background-color: #30363d;
-        }
-
-        #logNewRiskButton {
-            padding: 10px 15px;
-            background-color: #9a6700; /* Amber for risk action */
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-
-        #logNewRiskButton:hover {
-            background-color: #a77717;
-        }
-
-        /* Risk Form Styling */
-        #riskForm {
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding: 20px;
-            background-color: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-        }
-
-        #riskForm input[type="text"], #riskForm select, #riskForm textarea {
-            padding: 10px;
-            border: 1px solid #30363d;
-            border-radius: 4px;
-            background-color: #0d1117;
-            color: #c9d1d9;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .save-button, .cancel-button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .save-button {
-            background-color: #58a6ff;
-            color: white;
-        }
-
-        .cancel-button {
-            background-color: #30363d;
-            color: #c9d1d9;
-        }
-
-        /* Risk Table Styling */
-        .risk-table-container {
-            overflow-x: auto;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            background-color: #161b22;
-        }
-
-        .risk-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-
-        .risk-table th, .risk-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #21262d;
-        }
-
-        .risk-table th {
-            background-color: #21262d;
-            color: #8b949e;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .risk-table tr:hover {
-            background-color: #1f2a37;
-        }
-
-        /* Status/Impact styling */
-        .risk-status-badge { /* Renamed for clarity vs. risk-status class on filter buttons */
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 0.8em;
-            font-weight: bold;
-            display: inline-block;
-            text-transform: capitalize;
-        }
-
-        .impact.high, .probability.high { background-color: #5c2c31; color: #f85149; }
-        .impact.medium, .probability.medium { background-color: #55441d; color: #d29922; }
-        .impact.low, .probability.low { background-color: #1d3329; color: #3fb950; }
-
-        .risk-status-badge.active { background-color: #55441d; color: #d29922; }
-        .risk-status-badge.monitored { background-color: #1d3329; color: #3fb950; }
-        .risk-status-badge.retired { background-color: #30363d; color: #8b949e; }
-
-        .risk-actions button {
-            background: none;
-            border: none;
-            color: #58a6ff;
-            cursor: pointer;
-            margin-left: 8px;
-        }
-
-        .risk-actions button:hover {
-            color: #8b949e;
-        }
-
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            padding-top: 15px;
-            border-top: 1px solid #21262d;
-            font-size: 0.8em;
-            color: #8b949e;
-        }
-
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <div class="logo">LP</div>
-        <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
-        <div class="user-info">
-            <span id="userNameDisplay">Loading...</span>
-            <span class="user-initials" id="userInitialsDisplay">?</span>
-            <button class="signout-btn" onclick="signOutUser()">Sign Out</button>
-        </div>
-    </div>
-
-    <div class="main-layout">
-        <div class="sidebar">
-            <ul>
-                <li><a href="dashboard.html">🏠 Dashboard</a></li>
-                <li><a href="tasks.html">🗂 Tasks</a></li>
-                <li><a href="timeline.html">📅 Timeline</a></li>
-                <li class="active"><a href="risk-log.html">⚠️ Risk Log</a></li>
-                <li><a href="docs.html">📎 Docs</a></li>
-            </ul>
-        </div>
-
-        <div class="content">
-            <h1>⚠️ Project Risk Log</h1>
-
-            <div class="controls">
-                <div class="filters" id="riskFilters">
-                    <button class="active" data-filter="all">Filter: All Risks</button>
-                    <button data-filter="high-impact">Filter: High Impact</button>
-                    <button data-filter="active-status">Filter: Active Status</button>
-                </div>
-                <button id="logNewRiskButton">+ Log New Risk</button>
-            </div>
-
-            <div id="riskForm">
-                <input type="hidden" id="editRiskId">
-                <input type="text" id="riskDescription" placeholder="Risk Description (What could happen?)" required>
-                <div style="display: flex; gap: 10px;">
-                    <select id="riskImpact" required style="width: 33%;">
-                        <option value="">-- Select Impact --</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                    </select>
-                    <select id="riskProbability" required style="width: 33%;">
-                        <option value="">-- Select Probability --</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                    </select>
-                    <input type="text" id="riskOwner" placeholder="Owner (e.g., Priya)" required style="width: 33%;">
-                </div>
-                <textarea id="riskMitigation" placeholder="Mitigation Strategy (What will we do to prevent/reduce impact?)" rows="3"></textarea>
-                <select id="riskStatus" required>
-                    <option value="active">Active</option>
-                    <option value="monitored">Monitored</option>
-                    <option value="retired">Retired</option>
-                </select>
-                <div class="form-actions">
-                    <button id="cancelButton" class="cancel-button">Cancel</button>
-                    <button id="saveRiskButton" class="save-button">Save Risk</button>
-                </div>
-            </div>
-
-            <div class="risk-table-container">
-                <table class="risk-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th style="width: 30%;">Description</th>
-                            <th>Impact</th>
-                            <th>Probability</th>
-                            <th>Owner</th>
-                            <th style="width: 30%;">Mitigation Strategy</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="riskTableBody">
-                        <!-- Risks will be rendered here -->
-                    </tbody>
-                </table>
-                <p id="emptyMessage" style="text-align: center; color: #8b949e; padding: 20px; display: none;">No risks logged yet. Click "+ Log New Risk" to start.</p>
-                <p id="loadingMessage" style="text-align: center; color: #8b949e; padding: 20px;">Loading risks...</p>
-            </div>
-
-            <div class="footer">
-                <p>© Lightweight IT PM — Designed for academic teams</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-
-    <script>
-        // Your Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
-            authDomain: "masters-project-kenneth.firebaseapp.com",
-            projectId: "masters-project-kenneth",
-            storageBucket: "masters-project-kenneth.appspot.com", // Consistent storageBucket format
-            messagingSenderId: "685736871672",
-            appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
-        };
-
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        let currentUser = null;
-        let userId = null;
-        let unsubscribeRisks = null; // To hold the unsubscribe function for the risks listener
-        let currentFilter = 'all'; // Default filter
-
-        const logNewRiskButton = document.getElementById('logNewRiskButton');
-        const riskForm = document.getElementById('riskForm');
-        const saveRiskButton = document.getElementById('saveRiskButton');
-        const cancelButton = document.getElementById('cancelButton');
-        const riskTableBody = document.getElementById('riskTableBody');
-        const emptyMessage = document.getElementById('emptyMessage');
-        const loadingMessage = document.getElementById('loadingMessage');
-        const editRiskIdInput = document.getElementById('editRiskId');
-        const riskFilters = document.getElementById('riskFilters');
-
-        // Form Inputs
-        const riskDescriptionInput = document.getElementById('riskDescription');
-        const riskImpactInput = document.getElementById('riskImpact');
-        const riskProbabilityInput = document.getElementById('riskProbability');
-        const riskOwnerInput = document.getElementById('riskOwner');
-        const riskMitigationInput = document.getElementById('riskMitigation');
-        const riskStatusInput = document.getElementById('riskStatus');
-
-        // --- AUTHENTICATION CHECK ---
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                currentUser = user;
-                userId = user.uid;
-
-                document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
-                document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
-
-                setupRiskListener(); // Start listening for risks once user is authenticated
-
-            } else {
-                console.log("No user signed in. Redirecting to login.");
-                window.location.href = "index.html";
-            }
-        });
-
-        function signOutUser() {
-            auth.signOut().then(() => {
-                localStorage.removeItem("LPM_session");
-                localStorage.removeItem("LPM_user_uid");
-                if (unsubscribeRisks) {
-                    unsubscribeRisks(); // Unsubscribe from Firestore listener on sign out
-                }
-                window.location.href = "index.html";
-            }).catch((error) => {
-                console.error("Error signing out:", error);
-                alert("Error signing out: " + error.message);
-            });
-        }
-
-        // --- FIRESTORE RISK OPERATIONS ---
-
-        function setupRiskListener() {
-            if (!userId) {
-                console.error("User ID not available for risk listener.");
-                return;
-            }
-
-            if (unsubscribeRisks) {
-                unsubscribeRisks(); // Unsubscribe from previous listener
-            }
-
-            loadingMessage.style.display = 'block';
-            emptyMessage.style.display = 'none';
-            riskTableBody.innerHTML = ''; // Clear existing table rows
-
-            let query = db.collection(`users/${userId}/risks`);
-
-            // Apply filters based on currentFilter state
-            if (currentFilter === 'high-impact') {
-                query = query.where('impact', '==', 'high');
-            } else if (currentFilter === 'active-status') { // Changed filter value for clarity
-                query = query.where('status', '==', 'active').orderBy('probability', 'desc'); // Consider active risks with higher probability first
-            }
-
-            // Order by impact and probability (descending for high first)
-            // Note: If combining 'where' clauses with 'orderBy' on different fields,
-            // Firestore requires an index. For 'all' filter, we order as specified.
-            if (currentFilter === 'all') {
-                query = query.orderBy('impact', 'desc').orderBy('probability', 'desc');
-            }
-            query = query.orderBy('createdAt', 'desc'); // Always order by creation time last
-
-            unsubscribeRisks = query.onSnapshot(snapshot => {
-                const risks = snapshot.docs.map(doc => ({
-                    id: doc.id, // Firestore document ID
-                    ...doc.data()
-                }));
-                renderRisks(risks);
-                loadingMessage.style.display = 'none'; // Hide loading message after data is rendered
-            }, error => {
-                console.error("Error fetching risks:", error);
-                riskTableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#f85149;">Error loading risks.</td></tr>';
-                loadingMessage.style.display = 'none';
-            });
-        }
-
-        // Helper function to show/hide the form and reset state
-        function toggleForm(show = true, riskData = null) {
-            if (show) {
-                riskForm.style.display = 'flex';
-                logNewRiskButton.style.display = 'none';
-
-                if (riskData) { // Editing an existing risk
-                    editRiskIdInput.value = riskData.id;
-                    riskDescriptionInput.value = riskData.description;
-                    riskImpactInput.value = riskData.impact;
-                    riskProbabilityInput.value = riskData.probability;
-                    riskOwnerInput.value = riskData.owner;
-                    riskMitigationInput.value = riskData.mitigation;
-                    riskStatusInput.value = riskData.status;
-                } else { // Adding a new risk
-                    editRiskIdInput.value = '';
-                    riskDescriptionInput.value = '';
-                    riskImpactInput.value = '';
-                    riskProbabilityInput.value = '';
-                    riskOwnerInput.value = currentUser ? (currentUser.displayName || currentUser.email.split('@')[0]) : ''; // Pre-fill with display name or part of email
-                    riskMitigationInput.value = '';
-                    riskStatusInput.value = 'active';
-                }
-            } else { // Hiding the form
-                riskForm.style.display = 'none';
-                logNewRiskButton.style.display = 'block';
-                // Reset form fields completely
-                editRiskIdInput.value = '';
-                riskDescriptionInput.value = '';
-                riskImpactInput.value = '';
-                riskProbabilityInput.value = '';
-                riskOwnerInput.value = '';
-                riskMitigationInput.value = '';
-                riskStatusInput.value = 'active';
-            }
-        }
-
-        // --- RENDER FUNCTION ---
-        function renderRisks(risks) { // Takes risks array as argument
-            riskTableBody.innerHTML = '';
-
-            if (risks.length === 0) {
-                emptyMessage.style.display = 'block';
-            } else {
-                emptyMessage.style.display = 'none';
-            }
-
-            risks.forEach(risk => {
-                const row = riskTableBody.insertRow();
-                // Truncate Firestore ID for display or use a more human-readable unique code
-                const displayId = risk.id.substring(0, 6) + '...';
-
-                row.innerHTML = `
-                    <td>${displayId}</td>
-                    <td>${risk.description}</td>
-                    <td><span class="risk-status-badge impact ${risk.impact}">${risk.impact}</span></td>
-                    <td><span class="risk-status-badge probability ${risk.probability}">${risk.probability}</span></td>
-                    <td>${risk.owner}</td>
-                    <td>${risk.mitigation}</td>
-                    <td><span class="risk-status-badge ${risk.status}">${risk.status}</span></td>
-                    <td class="risk-actions">
-                        <button onclick="editRisk('${risk.id}')">✏️</button>
-                        <button onclick="deleteRisk('${risk.id}')">🗑️</button>
-                    </td>
-                `;
-            });
-        }
-
-        // --- CRUD LOGIC ---
-
-        async function saveRisk() {
-            const description = riskDescriptionInput.value.trim();
-            const impact = riskImpactInput.value;
-            const probability = riskProbabilityInput.value;
-            const owner = riskOwnerInput.value.trim();
-            const mitigation = riskMitigationInput.value.trim();
-            const status = riskStatusInput.value;
-            const riskId = editRiskIdInput.value;
-
-            if (!description || !impact || !probability || !owner) {
-                alert("Please fill in Description, Impact, Probability, and Owner.");
-                return;
-            }
-
-            const riskData = {
-                description: description,
-                impact: impact,
-                probability: probability,
-                owner: owner,
-                mitigation: mitigation,
-                status: status
-            };
-
-            try {
-                if (riskId) {
-                    // UPDATE existing risk
-                    await db.collection(`users/${userId}/risks`).doc(riskId).update(riskData);
-                    console.log("Risk updated successfully!");
-                } else {
-                    // ADD new risk
-                    await db.collection(`users/${userId}/risks`).add({
-                        ...riskData,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    console.log("Risk added successfully!");
-                }
-                toggleForm(false); // Hide and reset form
-            } catch (error) {
-                console.error("Error saving risk:", error);
-                alert("Failed to save risk: " + error.message);
-            }
-        }
-
-        window.editRisk = async (riskId) => {
-            try {
-                const doc = await db.collection(`users/${userId}/risks`).doc(riskId).get();
-                if (doc.exists) {
-                    toggleForm(true, { id: doc.id, ...doc.data() });
-                } else {
-                    console.warn("Risk not found for editing:", riskId);
-                    alert("Risk not found.");
-                }
-            } catch (error) {
-                console.error("Error fetching risk for edit:", error);
-                alert("Failed to load risk for editing: " + error.message);
-            }
-        };
-
-        window.deleteRisk = async (riskId) => {
-            if (confirm(`Are you sure you want to delete this risk?`)) {
-                try {
-                    await db.collection(`users/${userId}/risks`).doc(riskId).delete();
-                    console.log("Risk deleted successfully!");
-                } catch (error) {
-                    console.error("Error deleting risk:", error);
-                    alert("Failed to delete risk: " + error.message);
-                }
-            }
-        };
-
-        // --- EVENT LISTENERS ---
-        logNewRiskButton.addEventListener('click', () => toggleForm(true));
-        saveRiskButton.addEventListener('click', saveRisk);
-        cancelButton.addEventListener('click', () => toggleForm(false));
-
-        // Filter button event listeners
-        riskFilters.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                // Remove active class from all buttons
-                riskFilters.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                // Add active class to the clicked button
-                e.target.classList.add('active');
-
-                currentFilter = e.target.dataset.filter;
-                setupRiskListener(); // Re-fetch risks with new filter
-            }
-        });
-    </script>
-
-</body>
-</html>
-
-                    console.error("Error deleting risk:", error);
-                    alert("Failed to delete risk: " + error.message);
-                }
-            }
-        };
-
-        // --- EVENT LISTENERS ---
-        logNewRiskButton.addEventListener('click', () => toggleForm(true));
-        saveRiskButton.addEventListener('click', saveRisk);
-        cancelButton.addEventListener('click', () => toggleForm(false));
-
-        // Filter button event listeners
-        riskFilters.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                // Remove active class from all buttons
-                riskFilters.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                // Add active class to the clicked button
-                e.target.classList.add('active');
-
-                currentFilter = e.target.dataset.filter;
-                setupRiskListener(); // Re-fetch risks with new filter
-            }
-        });
-
-        // No need for DOMContentLoaded listener; auth.onAuthStateChanged handles initial setup
-    </script>
-
+</script>
 </body>
 </html>
