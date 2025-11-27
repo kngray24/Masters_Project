@@ -6,7 +6,7 @@
     <title>Lightweight IT PM — Risk Log</title>
     <link rel="stylesheet" href="style.css"> 
     <style>
-        /* (Placeholder styles - replace or merge with your actual styles) */
+        /* (Existing Styles for layout and colors) */
         body {
             font-family: Arial, sans-serif;
             background-color: #0d1117;
@@ -43,11 +43,49 @@
             border-radius: 6px;
             display: flex;
             justify-content: space-between;
+            align-items: center; /* Center items vertically */
         }
         /* Risk level colors */
         .risk-high { color: #f85149; font-weight: bold; }
         .risk-medium { color: #d29922; font-weight: bold; }
         .risk-low { color: #3fb950; font-weight: bold; }
+
+        /* --- New Form Styles --- */
+        .risk-form-container {
+            background-color: #161b22;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #30363d;
+        }
+        .risk-form-container input, .risk-form-container select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+            box-sizing: border-box;
+        }
+        .risk-form-container button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .risk-form-container button:hover {
+            background-color: #45a049;
+        }
+        .risk-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -58,8 +96,44 @@
     </div>
 
     <div class="content">
-        <h1>Active Project Risks</h1>
-        <div id="loadingMsg" style="color:#ADD8E6;">Loading and verifying session...</div>
+        <div class="risk-controls">
+            <h1>Active Project Risks</h1>
+            <button id="logRiskBtn" onclick="toggleRiskForm()" class="risk-form-container button">Log New Risk</button>
+        </div>
+
+        <div id="newRiskForm" class="risk-form-container" style="display:none;">
+            <h3>Log New Risk</h3>
+            <form id="riskEntryForm">
+                <input type="text" id="riskDescription" placeholder="Risk Description (e.g., Key team member leaves)" required>
+                <input type="text" id="riskMitigation" placeholder="Mitigation Strategy" required>
+                
+                <select id="riskImpact" required>
+                    <option value="" disabled selected>Select Impact</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+                
+                <select id="riskProbability" required>
+                    <option value="" disabled selected>Select Probability</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+
+                <input type="text" id="riskOwner" placeholder="Risk Owner" required>
+                
+                <select id="riskStatus" required>
+                    <option value="Active">Active</option>
+                    <option value="Closed">Closed</option>
+                    <option value="Mitigated">Mitigated</option>
+                </select>
+                
+                <button type="button" onclick="saveNewRisk()">Save Risk</button>
+                <button type="button" onclick="toggleRiskForm()">Cancel</button>
+            </form>
+        </div>
+        <div id="loadingMsg" style="color:#ADD8E6; text-align: center;">Loading and verifying session...</div>
         
         <div id="risksList" style="display:none;">
             </div>
@@ -91,7 +165,7 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // --- Core Functions ---
+    // --- Utility Functions ---
 
     function getRiskColorClass(level) {
         const normalizedLevel = level.toLowerCase().trim();
@@ -100,10 +174,15 @@
         if (normalizedLevel === 'low') return 'risk-low';
         return '';
     }
+    
+    function toggleRiskForm() {
+        const form = document.getElementById('newRiskForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        document.getElementById('riskEntryForm').reset();
+    }
 
     function signOutUser() {
         auth.signOut().then(() => {
-            // Sign-out successful, clear session storage and redirect
             localStorage.removeItem("LPM_session");
             localStorage.removeItem("LPM_user_uid"); 
             window.location.href = "index.html"; 
@@ -112,6 +191,59 @@
             alert("Sign Out failed. See console for details.");
         });
     }
+
+    // --- SAVE Risk Function (CREATES the risk) ---
+
+    function saveNewRisk() {
+        const user = auth.currentUser;
+        const saveButton = document.querySelector('#newRiskForm button[onclick="saveNewRisk()"]');
+        
+        if (!user) {
+            alert("You must be logged in to save a risk.");
+            return;
+        }
+
+        const riskData = {
+            description: document.getElementById('riskDescription').value.trim(),
+            impact: document.getElementById('riskImpact').value.trim(),
+            probability: document.getElementById('riskProbability').value.trim(),
+            owner: document.getElementById('riskOwner').value.trim(),
+            mitigation: document.getElementById('riskMitigation').value.trim(),
+            status: document.getElementById('riskStatus').value.trim(),
+            
+            // CRITICAL: Add the current user's UID to satisfy the security rules
+            ownerId: user.uid, 
+            
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        if (!riskData.description || !riskData.owner || !riskData.impact || !riskData.probability) {
+            alert("Please fill in the Description, Owner, Impact, and Probability fields.");
+            return;
+        }
+
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+
+        db.collection("risks").add(riskData)
+            .then(() => {
+                alert("Risk successfully saved!");
+                document.getElementById('riskEntryForm').reset(); 
+                toggleRiskForm(); // Hide the form
+                loadRisksFromFirestore(); // RELOAD the list to show the new item
+            })
+            .catch((error) => {
+                console.error("Error saving risk:", error);
+                alert(`Failed to save risk: ${error.message}. Check Security Rules!`);
+            })
+            .finally(() => {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Risk';
+            });
+    }
+
+
+    // --- LOAD Risks Function (READS all risks) ---
 
     function loadRisksFromFirestore() {
         const risksList = document.getElementById('risksList');
@@ -132,23 +264,33 @@
                     return;
                 }
                 
+                noRisksMsg.style.display = 'none'; // Hide empty message if data exists
+
                 querySnapshot.forEach((doc) => {
                     const risk = doc.data();
+                    const riskId = doc.id; // Get the document ID for future actions
                     
                     const item = document.createElement('div');
                     item.classList.add('risk-item');
+                    item.id = `risk-${riskId}`;
                     
                     const impactClass = getRiskColorClass(risk.impact || 'low');
                     const probabilityClass = getRiskColorClass(risk.probability || 'low');
 
                     item.innerHTML = `
-                        <div>
+                        <div style="width: 40%;">
                             <strong>${risk.description || 'Untitled Risk'}</strong><br>
+                            Mitigation: <em>${risk.mitigation || 'None defined'}</em>
+                        </div>
+                        <div style="width: 15%;">
                             Owner: ${risk.owner || 'N/A'}
                         </div>
-                        <div>
+                        <div style="width: 25%;">
                             Impact: <span class="${impactClass}">${risk.impact || 'N/A'}</span> | 
                             Probability: <span class="${probabilityClass}">${risk.probability || 'N/A'}</span>
+                        </div>
+                        <div style="width: 10%; text-align: right;">
+                            Status: ${risk.status || 'Active'}
                         </div>
                     `;
                     risksList.appendChild(item);
