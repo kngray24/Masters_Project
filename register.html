@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lightweight IT PM — Register</title>
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="style.css">
     <style>
         /* (KEEP ALL YOUR EXISTING CSS STYLES HERE) */
         body {
@@ -67,97 +67,100 @@
 <body>
     <div class="register-container">
         <h2>Create Your Account</h2>
-    <form onsubmit="registerUser(event)">
-    <input type="text" id="regUsername" placeholder="Username (for display)" required>
-    <input type="email" id="regEmail" placeholder="Email Address" required>
-    <input type="password" id="regPassword" placeholder="Password (min 6 chars)" required>
-    <input type="password" id="regConfirm" placeholder="Confirm Password" required>
-    <button type="submit">Register and Proceed to Login</button>
-</form>
-<div id="regMsg" style="color:#f85149; margin-top:10px;"></div>
+        <form onsubmit="registerUser(event)">
+            <input type="text" id="regUsername" placeholder="Username (for display)" required>
+            <input type="email" id="regEmail" placeholder="Email Address" required>
+            <input type="password" id="regPassword" placeholder="Password (min 6 chars)" required>
+            <input type="password" id="regConfirm" placeholder="Confirm Password" required>
+            <button type="submit">Register and Proceed to Login</button>
+        </form>
+        <div id="regMsg" style="color:#f85149; margin-top:10px;"></div>
         <div class="login-link">
-            Already have an account? <a href="index.html">Log In Here</a> </div>
+            Already have an account? <a href="index.html">Log In Here</a>
+        </div>
     </div>
 
-<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-<script>
-    // 1. YOUR FIREBASE CONFIGURATION - NOW CORRECTLY ADDED
-    const firebaseConfig = {
-        apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
-        authDomain: "masters-project-kenneth.firebaseapp.com",
-        projectId: "masters-project-kenneth",
-        storageBucket: "masters-project-kenneth.firebasestorage.app",
-        messagingSenderId: "685736871672",
-        appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
-    };
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script>
+        // 1. YOUR FIREBASE CONFIGURATION - NOW CORRECTLY ADDED
+        const firebaseConfig = {
+            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
+            authDomain: "masters-project-kenneth.firebaseapp.com",
+            projectId: "masters-project-kenneth",
+            storageBucket: "masters-project-kenneth.firebasestorage.app",
+            messagingSenderId: "685736871672",
+            appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
+        };
 
-    // Initialize Firebase Services
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    function registerUser(e) {
-        e.preventDefault();
-        document.getElementById("regMsg").textContent = "";
-
-        const username = document.getElementById("regUsername").value.trim();
-        const email = document.getElementById("regEmail").value.trim();
-        const pass = document.getElementById("regPassword").value;
-        const pass2 = document.getElementById("regConfirm").value;
-
-        if (pass.length < 6) {
-             document.getElementById("regMsg").textContent = "Password must be at least 6 characters.";
-             return;
+        // Initialize Firebase Services
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
-        if (pass !== pass2) {
-            document.getElementById("regMsg").textContent = "Passwords do not match.";
-            return;
-        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        auth.createUserWithEmailAndPassword(email, pass)
-            .then((userCredential) => {
-                const user = userCredential.user;
-                
-                // 1. Update the Firebase Auth profile display name
-                return user.updateProfile({
-                    displayName: username
-                }).then(() => {
-                    // 2. Write custom user data to the Firestore 'users' collection
-                    return db.collection('users').doc(user.uid).set({
-                        username: username,
-                        email: email,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        function registerUser(e) {
+            e.preventDefault();
+            document.getElementById("regMsg").textContent = ""; // Clear previous message
+            document.getElementById("regMsg").style.color = "#f85149"; // Reset color to default error
+
+            const username = document.getElementById("regUsername").value.trim();
+            const email = document.getElementById("regEmail").value.trim();
+            const pass = document.getElementById("regPassword").value;
+            const pass2 = document.getElementById("regConfirm").value;
+
+            if (pass.length < 6) {
+                document.getElementById("regMsg").textContent = "Password must be at least 6 characters.";
+                return;
+            }
+            if (pass !== pass2) {
+                document.getElementById("regMsg").textContent = "Passwords do not match.";
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+
+                    // 1. Update the Firebase Auth profile display name
+                    return user.updateProfile({
+                        displayName: username
+                    }).then(() => {
+                        // 2. Write custom user data to the Firestore 'users' collection
+                        return db.collection('users').doc(user.uid).set({
+                            username: username,
+                            email: email,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
                     });
+                })
+                .then(() => {
+                    // Success and redirect
+                    document.getElementById("regMsg").style.color = "#3fb950";
+                    document.getElementById("regMsg").textContent = "Account created! Redirecting to login...";
+
+                    setTimeout(() => {
+                        window.location.href = "index.html";
+                    }, 1500);
+                })
+                .catch((error) => {
+                    // Handle errors
+                    let message = "Registration failed.";
+                    if (error.code === 'auth/email-already-in-use') {
+                        message = "This email is already registered.";
+                    } else if (error.code === 'auth/weak-password') {
+                        message = "Password is too weak. Must be at least 6 characters.";
+                    } else if (error.code === 'auth/network-request-failed') {
+                        message = "Network error. Check your connection.";
+                    } else {
+                        // Catch any other unexpected Firebase auth errors
+                        message = `Error: ${error.message}`;
+                    }
+                    document.getElementById("regMsg").textContent = message;
                 });
-            })
-            .then(() => {
-                // Success and redirect
-                document.getElementById("regMsg").style.color = "#3fb950";
-                document.getElementById("regMsg").textContent = "Account created! Redirecting to login...";
-                
-                localStorage.removeItem("LPM_user"); 
-                
-                setTimeout(() => {
-                    window.location.href = "index.html"; 
-                }, 1500);
-            })
-            .catch((error) => {
-                // Handle errors
-                let message = "Registration failed.";
-                if (error.code === 'auth/email-already-in-use') {
-                    message = "This email is already registered.";
-                } else if (error.code === 'auth/weak-password') {
-                    message = "Password is too weak. Must be at least 6 characters.";
-                } else if (error.code === 'auth/network-request-failed') {
-                    message = "Network error. Check your connection.";
-                }
-                document.getElementById("regMsg").textContent = message;
-            });
-    }
-</script>
+        }
+    </script>
 </body>
 </html>

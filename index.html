@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lightweight IT PM — Login</title>
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="style.css">
     <style>
         /* Styles included here for guaranteed dark background and centered card */
         body {
@@ -29,7 +29,7 @@
             margin-bottom: 25px;
         }
         .login-container input[type="text"],
-        .login-container input[type="email"], 
+        .login-container input[type="email"],
         .login-container input[type="password"] {
             width: 100%;
             padding: 12px;
@@ -67,72 +67,73 @@
 <body>
     <div class="login-container">
         <h2>Lightweight IT PM Login</h2>
-     <form onsubmit="loginUser(event)">
-    <input type="email" id="loginEmail" placeholder="Email Address" required>
-    <input type="password" id="loginPassword" placeholder="Password" required>
-    <button type="submit">Log In</button>
-</form>
-<div id="loginMsg" style="color:#f85149; margin-top:10px;"></div>
+        <form onsubmit="loginUser(event)">
+            <input type="email" id="loginEmail" placeholder="Email Address" required>
+            <input type="password" id="loginPassword" placeholder="Password" required>
+            <button type="submit">Log In</button>
+        </form>
+        <div id="loginMsg" style="color:#f85149; margin-top:10px;"></div>
         <div class="register-link">
             Don't have an account? <a href="register.html">Register Here</a>
         </div>
     </div>
 
-<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-<script>
-    // 1. YOUR FIREBASE CONFIGURATION - NOW CORRECTLY ADDED
-    const firebaseConfig = {
-        apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
-        authDomain: "masters-project-kenneth.firebaseapp.com",
-        projectId: "masters-project-kenneth",
-        storageBucket: "masters-project-kenneth.firebasestorage.app",
-        messagingSenderId: "685736871672",
-        appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
-    };
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script>
+        // 1. YOUR FIREBASE CONFIGURATION - NOW CORRECTLY ADDED
+        const firebaseConfig = {
+            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
+            authDomain: "masters-project-kenneth.firebaseapp.com",
+            projectId: "masters-project-kenneth",
+            storageBucket: "masters-project-kenneth.firebasestorage.app",
+            messagingSenderId: "685736871672",
+            appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
+        };
 
-    // Initialize Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const auth = firebase.auth();
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
 
-    function loginUser(e) {
-        e.preventDefault();
-        document.getElementById("loginMsg").textContent = ""; // Clear previous message
+        function loginUser(e) {
+            e.preventDefault();
+            document.getElementById("loginMsg").textContent = ""; // Clear previous message
+            document.getElementById("loginMsg").style.color = "#f85149"; // Reset color to default error
 
-        const emailInput = document.getElementById("loginEmail").value.trim();
-        const passwordInput = document.getElementById("loginPassword").value;
+            const emailInput = document.getElementById("loginEmail").value.trim();
+            const passwordInput = document.getElementById("loginPassword").value;
 
-        // Sign in using Firebase Authentication
-        auth.signInWithEmailAndPassword(emailInput, passwordInput)
-            .then((userCredential) => {
-                // Signed in successfully
-                localStorage.setItem("LPM_session", "active");
-                
-                // Save user ID to localStorage for dashboard checks
-                localStorage.setItem("LPM_user_uid", userCredential.user.uid); 
-                
-                // Use a green success message before redirecting
-                document.getElementById("loginMsg").style.color = "#3fb950"; 
-                document.getElementById("loginMsg").textContent = "Login successful! Redirecting...";
+            // Sign in using Firebase Authentication
+            auth.signInWithEmailAndPassword(emailInput, passwordInput)
+                .then((userCredential) => {
+                    // Signed in successfully
+                    localStorage.setItem("LPM_session", "active");
+                    localStorage.setItem("LPM_user_uid", userCredential.user.uid);
 
-                setTimeout(() => {
-                    window.location.href = "dashboard.html"; 
-                }, 500); // Wait a moment for success message
-            })
-            .catch((error) => {
-                // Handle errors
-                let message = "Login failed. Please check your email and password.";
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email' || error.code === 'auth/wrong-password') {
-                    message = "Invalid email or password.";
-                } else if (error.code === 'auth/too-many-requests') {
-                    message = "Too many failed attempts. Try again later.";
-                }
-                document.getElementById("loginMsg").textContent = message;
-                document.getElementById("loginMsg").style.color = "#f85149"; // Red error color
-            });
-    }
-</script>
+                    // Use a green success message before redirecting
+                    document.getElementById("loginMsg").style.color = "#3fb950";
+                    document.getElementById("loginMsg").textContent = "Login successful! Redirecting...";
+
+                    setTimeout(() => {
+                        window.location.href = "dashboard.html";
+                    }, 500); // Wait a moment for success message
+                })
+                .catch((error) => {
+                    // Handle errors
+                    let message = "Login failed. Please check your email and password.";
+                    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email' || error.code === 'auth/wrong-password') {
+                        message = "Invalid email or password.";
+                    } else if (error.code === 'auth/too-many-requests') {
+                        message = "Too many failed attempts. Try again later.";
+                    } else {
+                        // Catch any other unexpected Firebase auth errors
+                        message = `Error: ${error.message}`;
+                    }
+                    document.getElementById("loginMsg").textContent = message;
+                });
+        }
+    </script>
 </body>
 </html>
