@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lightweight IT PM — Log Risk</title>
+    <title>Lightweight IT PM — Risk Log</title>
     <style>
         /* --- General Layout and Dark Theme (for consistency) --- */
         body {
@@ -35,7 +35,7 @@
             font-size: 1.2em;
             margin: 0;
         }
-        
+
         .project-info {
             font-weight: normal;
             color: #8b949e;
@@ -43,13 +43,13 @@
             margin-left: 10px;
         }
 
-        /* --- ADDED FROM DASHBOARD: User Info Styles --- */
         .user-info {
             margin-left: auto;
             font-size: 0.9em;
             color: #8b949e;
             display: flex;
             align-items: center;
+            gap: 10px; /* Added gap for sign-out button */
         }
 
         .user-initials {
@@ -64,30 +64,30 @@
             font-size: 0.8em;
             margin-left: 8px;
         }
-
-        /* ---- ADDED FROM DASHBOARD: SIGN OUT BUTTON ---- */
-        .signout-btn {
-            margin-left: 15px;
-            background-color: #30363d;
-            color: #f85149;
-            border: 1px solid #f85149;
-            padding: 6px 12px;
-            border-radius: 6px;
+        
+        /* --- SIGN OUT BUTTON STYLES (New) --- */
+        .sign-out-button {
+            /* Styling to make it look like a discreet action button */
+            background-color: #f44336; /* Red background for sign-out/danger */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 0.85em;
-            transition: 0.2s;
+            transition: background-color 0.3s;
         }
-
-        .signout-btn:hover {
-            background-color: #5c2c31;
+        .sign-out-button:hover {
+            background-color: #d32f2f;
         }
-        /* --- END OF ADDED STYLES --- */
-
-
-        /* --- Sidebar & Main Layout (New/Updated) --- */
+        
+        /* --- Sidebar & Main Layout --- */
         .main-layout {
             display: flex;
-            height: calc(100vh - 45px);
+            height: calc(100vh - 45px); /* Full viewport height minus header */
         }
 
         .sidebar {
@@ -95,7 +95,6 @@
             background-color: #161b22;
             padding: 20px 0;
             border-right: 1px solid #21262d;
-            flex-shrink: 0; 
         }
 
         .sidebar ul {
@@ -125,40 +124,68 @@
 
         .content {
             flex-grow: 1;
-            padding: 40px;
-            max-width: 1000px; 
-            margin: 0 auto;
-            overflow-y: auto; 
+            padding: 20px;
+            overflow-y: auto;
         }
-
+        
         h1 {
             color: #58a6ff;
             border-bottom: 2px solid #21262d;
             padding-bottom: 10px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
-        /* --- Form Styles --- */
-        .risk-form-container {
+        /* --- Risk Log Specific Styles --- */
+        .controls {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filters button {
+            padding: 8px 15px;
+            margin-right: 10px;
+            background-color: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .filters button:hover, .filters button.active {
+            background-color: #30363d;
+        }
+
+        #logNewRiskButton {
+            padding: 10px 15px;
+            background-color: #9a6700; /* Amber for risk action */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        #logNewRiskButton:hover {
+            background-color: #a77717;
+        }
+        
+        /* Risk Form Styling */
+        #riskForm {
+            display: none;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
+            margin-bottom: 20px;
             padding: 20px;
             background-color: #161b22;
             border: 1px solid #30363d;
             border-radius: 6px;
         }
         
-        .risk-form-container label {
-            font-weight: bold;
-            color: #8b949e;
-            margin-bottom: 5px;
-            display: block;
-        }
-        
-        .risk-form-container input[type="text"], 
-        .risk-form-container select, 
-        .risk-form-container textarea {
+        #riskForm input[type="text"], #riskForm select, #riskForm textarea {
             padding: 10px;
             border: 1px solid #30363d;
             border-radius: 4px;
@@ -167,25 +194,16 @@
             width: 100%;
             box-sizing: border-box;
         }
-
-        .form-row {
-            display: flex;
-            gap: 20px;
-        }
-
-        .form-column {
-            flex: 1;
-        }
         
         .form-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         
-        .save-button, .back-button {
-            padding: 10px 20px;
+        .save-button, .cancel-button {
+            padding: 10px 15px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
@@ -193,63 +211,98 @@
         }
         
         .save-button {
-            background-color: #9a6700; 
+            background-color: #58a6ff;
             color: white;
-            transition: background-color 0.2s;
         }
 
-        .save-button:hover:not(:disabled) {
-            background-color: #b37e00;
-        }
-
-        .save-button:disabled {
-            background-color: #30363d;
-            color: #6a737d;
-            cursor: not-allowed;
-        }
-
-        .back-button {
+        .cancel-button {
             background-color: #30363d;
             color: #c9d1d9;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            transition: background-color 0.2s;
         }
-        .back-button:hover {
-            background-color: #40464f;
+        
+        /* Risk Table Styling */
+        .risk-table-container {
+            overflow-x: auto;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            background-color: #161b22;
+        }
+        
+        .risk-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
         }
 
-        /* --- Success/Details Display --- */
-        #logSuccessMessage {
-            background-color: #1d3329; 
-            border: 1px solid #3fb950;
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 20px;
-            display: none; 
+        .risk-table th, .risk-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #21262d;
         }
-        #logSuccessMessage p {
-            margin: 5px 0;
+
+        .risk-table th {
+            background-color: #21262d;
+            color: #8b949e;
+            font-weight: 600;
+            white-space: nowrap;
         }
-        .risk-detail-value {
-            color: #58a6ff;
+        
+        .risk-table tr:hover {
+            background-color: #1f2a37;
+        }
+        
+        /* Status/Impact styling */
+        .risk-status {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
             font-weight: bold;
+            display: inline-block;
+            text-transform: capitalize;
         }
+
+        .impact.high { background-color: #5c2c31; color: #f85149; }
+        .impact.medium { background-color: #55441d; color: #d29922; }
+        .impact.low { background-color: #1d3329; color: #3fb950; }
+        
+        .probability.high { background-color: #5c2c31; color: #f85149; }
+        .probability.medium { background-color: #55441d; color: #d29922; }
+        .probability.low { background-color: #1d3329; color: #3fb950; }
+        
+        .risk-actions button {
+            background: none;
+            border: none;
+            color: #58a6ff;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .risk-actions button:hover {
+            color: #8b949e;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid #21262d;
+            font-size: 0.8em;
+            color: #8b949e;
+        }
+
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="logo">LP</div>
-        <h2>Lightweight IT PM <span class="project-info">— Risk Logger</span></h2>
-        
+        <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
         <div class="user-info">
-            <span id="userNameDisplay">Loading...</span>
-            <span class="user-initials" id="userInitialsDisplay">?</span>
-            <button class="signout-btn" onclick="signOutUser()">Sign Out</button>
+            Student — Project Manager 
+            <span class="user-initials">K</span>
+            <a href="index.html" class="sign-out-button">Sign Out</a>
         </div>
-        </div>
+    </div>
 
     <div class="main-layout">
         <div class="sidebar">
@@ -261,201 +314,233 @@
                 <li><a href="docs.html">📎 Docs</a></li>
             </ul>
         </div>
+        
         <div class="content">
-            <h1>Log New Project Risk ⚠️</h1>
+            <h1>⚠️ Project Risk Log</h1>
             
-            <div class="risk-form-container">
-                
-                <form id="riskEntryForm">
-                    <div class="form-column">
-                        <label for="riskDescription">Description</label>
-                        <textarea id="riskDescription" placeholder="What potential issue could affect the project?" rows="3" required></textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-column">
-                            <label for="riskImpact">Impact (Severity if it occurs)</label>
-                            <select id="riskImpact" required>
-                                <option value="" disabled selected>Select Impact</option>
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                            </select>
-                        </div>
-                        <div class="form-column">
-                            <label for="riskProbability">Probability (Likelihood of occurrence)</label>
-                            <select id="riskProbability" required>
-                                <option value="" disabled selected>Select Probability</option>
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-column">
-                            <label for="riskOwner">Owner</label>
-                            <input type="text" id="riskOwner" placeholder="Who is responsible for tracking this risk?" required>
-                        </div>
-                        <div class="form-column">
-                            <label for="riskStatus">Status</label>
-                            <select id="riskStatus" required>
-                                <option value="active">Active</option>
-                                <option value="monitored">Monitored</option>
-                                <option value="retired">Retired</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-column">
-                        <label for="riskMitigation">Mitigation Strategy</label>
-                        <textarea id="riskMitigation" placeholder="What actions will be taken to prevent/reduce the risk?" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <a href="dashboard.html" class="back-button">Back to Dashboard</a>
-                        <button type="submit" id="saveRiskButton" class="save-button">Log Risk</button>
-                    </div>
-                </form>
+            <div class="controls">
+                <div class="filters">
+                    <button class="active" data-filter="all">Filter: All Risks</button>
+                    <button data-filter="high">Filter: High Priority</button>
+                    <button data-filter="active">Filter: Active</button>
+                </div>
+                <button id="logNewRiskButton">+ Log New Risk</button>
             </div>
-
-            <div id="logSuccessMessage">
-                <h4>✅ Risk Successfully Logged!</h4>
-                <p><strong>Risk Description:</strong> <span class="risk-detail-value" id="successDesc"></span></p>
-                <p><strong>Impact/Prob:</strong> <span class="risk-detail-value" id="successImpact"></span> / <span class="risk-detail-value" id="successProb"></span></p>
-                <p><strong>Owner:</strong> <span class="risk-detail-value" id="successOwner"></span></p>
-                <p style="margin-top: 10px;"><a href="risk-log.html" style="color:#58a6ff;">View Full Risk Log</a> to manage this risk.</p>
+            
+            <div id="riskForm">
+                <input type="hidden" id="editRiskIndex">
+                <input type="text" id="riskDescription" placeholder="Risk Description (What could happen?)" required>
+                <div style="display: flex; gap: 10px;">
+                    <select id="riskImpact" required style="width: 33%;">
+                        <option value="">-- Select Impact --</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <select id="riskProbability" required style="width: 33%;">
+                        <option value="">-- Select Probability --</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <input type="text" id="riskOwner" placeholder="Owner (e.g., Priya)" required style="width: 33%;">
+                </div>
+                <textarea id="riskMitigation" placeholder="Mitigation Strategy (What will we do to prevent/reduce impact?)" rows="3"></textarea>
+                <select id="riskStatus" required>
+                    <option value="active">Active</option>
+                    <option value="monitored">Monitored</option>
+                    <option value="retired">Retired</option>
+                </select>
+                <div class="form-actions">
+                    <button id="cancelButton" class="cancel-button">Cancel</button>
+                    <button id="saveRiskButton" class="save-button">Save Risk</button>
+                </div>
+            </div>
+            
+            <div class="risk-table-container">
+                <table class="risk-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th style="width: 30%;">Description</th>
+                            <th>Impact</th>
+                            <th>Probability</th>
+                            <th>Owner</th>
+                            <th style="width: 30%;">Mitigation Strategy</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="riskTableBody">
+                        </tbody>
+                </table>
+                <p id="emptyMessage" style="text-align: center; color: #8b949e; padding: 20px;">No risks logged yet. Click "+ Log New Risk" to start.</p>
+            </div>
+            
+            <div class="footer">
+                <p>© Lightweight IT PM — Designed for academic teams</p>
             </div>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-
     <script>
-        // Your Firebase Configuration (Copied from Dashboard)
-        const firebaseConfig = {
-            apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
-            authDomain: "masters-project-kenneth.firebaseapp.com",
-            projectId: "masters-project-kenneth",
-            storageBucket: "masters-project-kenneth.appspot.com", 
-            messagingSenderId: "685736871672",
-            appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
-        };
+        const logNewRiskButton = document.getElementById('logNewRiskButton');
+        const riskForm = document.getElementById('riskForm');
+        const saveRiskButton = document.getElementById('saveRiskButton');
+        const cancelButton = document.getElementById('cancelButton');
+        const riskTableBody = document.getElementById('riskTableBody');
+        const emptyMessage = document.getElementById('emptyMessage');
+        const editRiskIndexInput = document.getElementById('editRiskIndex');
 
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        // Form Inputs
+        const riskDescriptionInput = document.getElementById('riskDescription');
+        const riskImpactInput = document.getElementById('riskImpact');
+        const riskProbabilityInput = document.getElementById('riskProbability');
+        const riskOwnerInput = document.getElementById('riskOwner');
+        const riskMitigationInput = document.getElementById('riskMitigation');
+        const riskStatusInput = document.getElementById('riskStatus');
+
+        // --- LOCAL STORAGE: Load risks on startup ---
+        function loadRisks() {
+            const risksJson = localStorage.getItem('projectRisks');
+            // If data exists, parse it. If not, return the initial example data.
+            return risksJson ? JSON.parse(risksJson) : [
+                { id: 'R-001', description: 'Authentication system development delays', impact: 'high', probability: 'medium', owner: 'Priya', mitigation: 'Add retry logic and use external library.', status: 'active' },
+                { id: 'R-002', description: 'Team member illness impacting implementation.', impact: 'medium', probability: 'high', owner: 'Project Manager', mitigation: 'Cross-train as key modules (ongoing).', status: 'monitored' },
+                { id: 'R-003', description: 'Scope creep from client feedback.', impact: 'low', probability: 'medium', owner: 'Omar', mitigation: 'Strict change control process (in place).', status: 'active' }
+            ];
         }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
 
-        let userId = null;
-        const form = document.getElementById('riskEntryForm');
-        const saveButton = document.getElementById('saveRiskButton');
-        const successMessage = document.getElementById('logSuccessMessage');
-
-        // --- SIGN OUT FUNCTION (Copied from Dashboard) ---
-        function signOutUser() {
-            auth.signOut().then(() => {
-                // Sign-out successful. Clear local storage and redirect.
-                localStorage.removeItem("LPM_session");
-                localStorage.removeItem("LPM_user_uid");
-                window.location.href = "index.html";
-            }).catch((error) => {
-                console.error("Error signing out:", error);
-                alert("Error signing out: " + error.message);
-            });
+        // --- LOCAL STORAGE: Save risks after any change ---
+        function saveRisks() {
+            localStorage.setItem('projectRisks', JSON.stringify(risks));
         }
-        // --- END OF COPIED SIGN OUT FUNCTION ---
+
+        let risks = loadRisks();
+        let riskCounter = risks.length > 0 ? Math.max(...risks.map(r => parseInt(r.id.split('-')[1]))) + 1 : 4;
 
 
-        // --- AUTHENTICATION CHECK (Updated to include UI updates) ---
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                userId = user.uid;
-                
-                // ADDED FROM DASHBOARD: Update UI with user info
-                document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
-                document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
-
-                // Pre-fill owner with authenticated user's info if available
-                const ownerInput = document.getElementById('riskOwner');
-                if (!ownerInput.value) {
-                    ownerInput.value = user.displayName || user.email.split('@')[0];
+        // Helper function to show/hide the form and reset state
+        function toggleForm(show = true, reset = true) {
+            if (show) {
+                riskForm.style.display = 'flex';
+                logNewRiskButton.style.display = 'none';
+                if (reset) {
+                    riskDescriptionInput.value = '';
+                    riskImpactInput.value = '';
+                    riskProbabilityInput.value = '';
+                    riskOwnerInput.value = '';
+                    riskMitigationInput.value = '';
+                    riskStatusInput.value = 'active';
+                    editRiskIndexInput.value = '';
                 }
             } else {
-                // No user is signed in. Redirect to login page.
-                console.log("No user signed in. Redirecting to login.");
-                window.location.href = "index.html";
+                riskForm.style.display = 'none';
+                logNewRiskButton.style.display = 'block';
             }
-        });
+        }
+        
+        // --- RENDER FUNCTION ---
+        function renderRisks() {
+            riskTableBody.innerHTML = ''; 
 
-        // --- SAVE RISK FUNCTION (Main logic remains the same) ---
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            successMessage.style.display = 'none'; 
-            saveNewRisk();
-        });
-
-        async function saveNewRisk() {
-            if (!userId) {
-                alert("Authentication failed. Please sign in again.");
+            if (risks.length === 0) {
+                emptyMessage.style.display = 'block';
                 return;
+            } else {
+                emptyMessage.style.display = 'none';
             }
 
-            const riskData = {
-                description: document.getElementById('riskDescription').value.trim(),
-                impact: document.getElementById('riskImpact').value,
-                probability: document.getElementById('riskProbability').value,
-                owner: document.getElementById('riskOwner').value.trim(),
-                mitigation: document.getElementById('riskMitigation').value.trim(),
-                status: document.getElementById('riskStatus').value,
+            risks.forEach((risk, index) => {
+                const row = riskTableBody.insertRow();
                 
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
+                row.innerHTML = `
+                    <td>${risk.id}</td>
+                    <td>${risk.description}</td>
+                    <td><span class="risk-status impact ${risk.impact}">${risk.impact}</span></td>
+                    <td><span class="risk-status probability ${risk.probability}">${risk.probability}</span></td>
+                    <td>${risk.owner}</td>
+                    <td>${risk.mitigation}</td>
+                    <td>${risk.status}</td>
+                    <td class="risk-actions">
+                        <button onclick="editRisk(${index})">✏️</button>
+                        <button onclick="deleteRisk(${index})">🗑️</button>
+                    </td>
+                `;
+            });
+            
+            saveRisks();
+        }
+        
+        // --- CRUD LOGIC ---
 
-            // Simple validation
-            if (!riskData.description || !riskData.impact || !riskData.probability || !riskData.owner) {
+        function saveRisk() {
+            const description = riskDescriptionInput.value.trim();
+            const impact = riskImpactInput.value;
+            const probability = riskProbabilityInput.value;
+            const owner = riskOwnerInput.value.trim();
+            const mitigation = riskMitigationInput.value.trim();
+            const status = riskStatusInput.value;
+            const index = editRiskIndexInput.value;
+
+            if (!description || !impact || !probability || !owner) {
                 alert("Please fill in Description, Impact, Probability, and Owner.");
                 return;
             }
+
+            const newRiskData = {
+                description: description,
+                impact: impact,
+                probability: probability,
+                owner: owner,
+                mitigation: mitigation,
+                status: status
+            };
+
+            if (index !== '') {
+                // UPDATE existing risk
+                risks[parseInt(index)] = { ...risks[parseInt(index)], ...newRiskData };
+            } else {
+                // ADD new risk
+                newRiskData.id = `R-${String(riskCounter++).padStart(3, '0')}`;
+                risks.push(newRiskData);
+            }
+
+            renderRisks();
+            toggleForm(false);
+        }
+
+        function editRisk(index) {
+            const risk = risks[index];
             
-            saveButton.disabled = true;
-            saveButton.textContent = 'Logging...';
+            riskDescriptionInput.value = risk.description;
+            riskImpactInput.value = risk.impact;
+            riskProbabilityInput.value = risk.probability;
+            riskOwnerInput.value = risk.owner;
+            riskMitigationInput.value = risk.mitigation;
+            riskStatusInput.value = risk.status;
+            editRiskIndexInput.value = index;
 
-            try {
-                // Save to the user's subcollection
-                await db.collection(`users/${userId}/risks`).add(riskData);
-                
-                // --- SUCCESS ACTIONS ---
-                
-                // 1. Update the success message with risk details
-                document.getElementById('successDesc').textContent = riskData.description;
-                document.getElementById('successImpact').textContent = riskData.impact.toUpperCase();
-                document.getElementById('successProb').textContent = riskData.probability.toUpperCase();
-                document.getElementById('successOwner').textContent = riskData.owner;
-
-                // 2. Display the success message
-                successMessage.style.display = 'block';
-
-                // 3. Clear the form (but keep the owner pre-filled)
-                form.reset(); 
-                if (auth.currentUser) {
-                    document.getElementById('riskOwner').value = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
-                }
-                document.getElementById('riskStatus').value = 'active'; 
-
-            } catch (error) {
-                console.error("Error logging risk:", error);
-                alert(`Failed to log risk: ${error.message}. Check Security Rules!`);
-            } finally {
-                saveButton.disabled = false;
-                saveButton.textContent = 'Log Risk';
+            toggleForm(true, false);
+        }
+        
+        function deleteRisk(index) {
+            if (confirm(`Are you sure you want to delete risk ${risks[index].id}: "${risks[index].description}"?`)) {
+                risks.splice(index, 1);
+                renderRisks();
             }
         }
+
+
+        // --- EVENT LISTENERS ---
+        logNewRiskButton.addEventListener('click', () => toggleForm(true));
+        saveRiskButton.addEventListener('click', saveRisk);
+        cancelButton.addEventListener('click', () => toggleForm(false));
+
+        // Initial render when the page loads
+        document.addEventListener('DOMContentLoaded', renderRisks);
+
     </script>
+
 </body>
 </html>
