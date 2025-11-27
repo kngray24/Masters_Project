@@ -81,15 +81,16 @@
 
 <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script> <script>
-    // 1. PASTE YOUR FIREBASE CONFIGURATION HERE
+<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+<script>
+    // 1. YOUR FIREBASE CONFIGURATION - NOW CORRECTLY ADDED
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
+        apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
+        authDomain: "masters-project-kenneth.firebaseapp.com",
+        projectId: "masters-project-kenneth",
+        storageBucket: "masters-project-kenneth.firebasestorage.app",
+        messagingSenderId: "685736871672",
+        appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
     };
 
     // Initialize Firebase Services
@@ -97,7 +98,7 @@
         firebase.initializeApp(firebaseConfig);
     }
     const auth = firebase.auth();
-    const db = firebase.firestore(); // INITIALIZED FIRESTORE
+    const db = firebase.firestore();
 
     function registerUser(e) {
         e.preventDefault();
@@ -138,7 +139,6 @@
                 document.getElementById("regMsg").style.color = "#3fb950";
                 document.getElementById("regMsg").textContent = "Account created! Redirecting to login...";
                 
-                // Clear old local user data if it exists
                 localStorage.removeItem("LPM_user"); 
                 
                 setTimeout(() => {
@@ -152,6 +152,8 @@
                     message = "This email is already registered.";
                 } else if (error.code === 'auth/weak-password') {
                     message = "Password is too weak. Must be at least 6 characters.";
+                } else if (error.code === 'auth/network-request-failed') {
+                    message = "Network error. Check your connection.";
                 }
                 document.getElementById("regMsg").textContent = message;
             });
