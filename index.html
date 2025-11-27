@@ -29,6 +29,7 @@
             margin-bottom: 25px;
         }
         .login-container input[type="text"],
+        .login-container input[type="email"], /* Changed input type */
         .login-container input[type="password"] {
             width: 100%;
             padding: 12px;
@@ -67,43 +68,72 @@
     <div class="login-container">
         <h2>Lightweight IT PM Login</h2>
      <form onsubmit="loginUser(event)">
-    <input type="text" id="loginUsername" placeholder="Username or Email" required>
-    <input type="password" id="loginPassword" placeholder="Password" required>
+    <input type="email" id="loginEmail" placeholder="Email Address" required> <input type="password" id="loginPassword" placeholder="Password" required>
     <button type="submit">Log In</button>
 </form>
-<div id="loginMsg" style="color:#ADD8E6; margin-top:10px;"></div>
+<div id="loginMsg" style="color:#f85149; margin-top:10px;"></div>
         <div class="register-link">
             Don't have an account? <a href="register.html">Register Here</a>
         </div>
     </div>
+
+<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
 <script>
-function loginUser(e) {
-    e.preventDefault();
+    // 1. PASTE YOUR FIREBASE CONFIGURATION HERE
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
 
-    const savedUser = JSON.parse(localStorage.getItem("LPM_user"));
-    const usernameInput = document.getElementById("loginUsername").value.trim();
-    const passwordInput = document.getElementById("loginPassword").value;
-
-    if (!savedUser) {
-        document.getElementById("loginMsg").textContent = "No registered account found. Please register first.";
-        return;
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
+    const auth = firebase.auth();
 
-    const isMatch =
-        (usernameInput === savedUser.username || usernameInput === savedUser.email) &&
-        passwordInput === savedUser.password;
+    function loginUser(e) {
+        e.preventDefault();
+        document.getElementById("loginMsg").textContent = ""; // Clear previous message
 
-    if (!isMatch) {
-        document.getElementById("loginMsg").textContent = "Invalid username/email or password.";
-        return;
+        const emailInput = document.getElementById("loginEmail").value.trim();
+        const passwordInput = document.getElementById("loginPassword").value;
+
+        // Sign in using Firebase Authentication
+        auth.signInWithEmailAndPassword(emailInput, passwordInput)
+            .then((userCredential) => {
+                // Signed in successfully
+                localStorage.setItem("LPM_session", "active");
+                
+                // Save user info (e.g., email or unique ID) to localStorage for dashboard checks
+                localStorage.setItem("LPM_user_uid", userCredential.user.uid); 
+                
+                // Use a green success message before redirecting
+                document.getElementById("loginMsg").style.color = "#3fb950"; 
+                document.getElementById("loginMsg").textContent = "Login successful! Redirecting...";
+
+                setTimeout(() => {
+                    window.location.href = "dashboard.html"; 
+                }, 500); // Wait a moment for success message
+            })
+            .catch((error) => {
+                // Handle errors
+                let message = "Login failed. Please check your email and password.";
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+                    message = "No account found with that email or invalid email format.";
+                } else if (error.code === 'auth/wrong-password') {
+                    message = "Invalid password.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    message = "Too many failed attempts. Try again later.";
+                }
+                document.getElementById("loginMsg").textContent = message;
+                document.getElementById("loginMsg").style.color = "#f85149"; // Red error color
+            });
     }
-
-    // Create session
-    localStorage.setItem("LPM_session", "active");
-
-    // Redirect to the dashboard upon successful login
-    window.location.href = "dashboard.html"; 
-}
 </script>
 </body>
 </html>
