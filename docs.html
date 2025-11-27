@@ -65,9 +65,9 @@
             font-size: 0.8em;
             margin-left: 8px;
         }
-        
-        /* --- SIGN OUT BUTTON STYLES (New) --- */
-        .sign-out-button {
+
+        /* --- SIGN OUT BUTTON STYLES --- */
+        .signout-btn {
             background-color: #f44336; /* Red background for sign-out/danger */
             color: white;
             border: none;
@@ -80,7 +80,7 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        .sign-out-button:hover {
+        .signout-btn:hover {
             background-color: #d32f2f;
         }
 
@@ -111,7 +111,7 @@
             font-weight: 500;
         }
 
-        .sidebar li a:hover, 
+        .sidebar li a:hover,
         .sidebar li.active a {
             background-color: #21262d;
             color: #58a6ff;
@@ -162,11 +162,20 @@
         .doc-name {
             font-size: 1em;
             color: #c9d1d9;
+            flex-grow: 1; /* Allows text to take available space */
+            word-break: break-all; /* Breaks long words */
+        }
+
+        .doc-uploaded-info {
+            font-size: 0.8em;
+            color: #8b949e;
+            margin-left: 10px;
         }
 
         .btn-group {
             display: flex;
             gap: 10px;
+            margin-left: 15px; /* Spacing from doc name */
         }
 
         .delete-btn, .download-btn {
@@ -216,6 +225,21 @@
         .upload-btn:hover {
             background-color: #79b4ff;
         }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid #21262d;
+            font-size: 0.8em;
+            color: #8b949e;
+        }
+        #uploadStatus {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #58a6ff;
+        }
+
     </style>
 </head>
 
@@ -225,14 +249,14 @@
         <div class="logo">LP</div>
         <h2>Lightweight IT PM <span class="project-info">— Project: Capstone</span></h2>
         <div class="user-info">
-            Student — Project Manager 
-            <span class="user-initials">K</span>
-            <a href="index.html" class="sign-out-button">Sign Out</a>
+            <span id="userNameDisplay">Loading...</span>
+            <span class="user-initials" id="userInitialsDisplay">?</span>
+            <button class="signout-btn" onclick="signOutUser()">Sign Out</button>
         </div>
     </div>
 
     <div class="main-layout">
-        
+
         <div class="sidebar">
             <ul>
                 <li><a href="dashboard.html">🏠 Dashboard</a></li>
@@ -250,97 +274,233 @@
                 <h3>Upload Document</h3>
                 <input type="file" id="docFile">
                 <button class="upload-btn" onclick="uploadDoc()">Upload</button>
+                <div id="uploadStatus" style="display:none;"></div>
             </div>
 
             <div class="card">
                 <h3>Stored Documents</h3>
                 <ul class="doc-list" id="docList">
-                    <li style="color:#8b949e;">No documents uploaded yet.</li>
+                    <li style="text-align:center;color:#8b949e;" id="loadingDocsMessage">Loading documents...</li>
+                    <li style="text-align:center;color:#8b949e; display:none;" id="noDocsMessage">No documents uploaded yet.</li>
                 </ul>
             </div>
 
         </div>
     </div>
 
-<script>
-    function loadDocs() {
-        const stored = localStorage.getItem('projectDocs');
-        return stored ? JSON.parse(stored) : [];
-    }
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-storage.js"></script>
 
-    function saveDocs(list) {
-        localStorage.setItem('projectDocs', JSON.stringify(list));
-    }
-
-    function renderDocs() {
-        const docs = loadDocs();
-        const list = document.getElementById('docList');
-        list.innerHTML = '';
-
-        if (docs.length === 0) {
-            list.innerHTML = '<li style="color:#8b949e;">No documents uploaded yet.</li>';
-            return;
-        }
-
-        docs.forEach((doc, index) => {
-            const item = document.createElement('li');
-            item.classList.add('doc-item');
-
-            item.innerHTML = `
-                <span class="doc-name">${doc.name}</span>
-                <div class="btn-group">
-                    <button class="download-btn" onclick="downloadDoc(${index})">Download</button>
-                    <button class="delete-btn" onclick="deleteDoc(${index})">Delete</button>
-                </div>
-            `;
-            list.appendChild(item);
-        });
-    }
-
-    function uploadDoc() {
-        const fileInput = document.getElementById('docFile');
-        const file = fileInput.files[0];
-
-        if (!file) {
-            alert("Please select a file.");
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const docs = loadDocs();
-            docs.push({
-                name: file.name,
-                data: e.target.result, // Base64 content
-                type: file.type
-            });
-            saveDocs(docs);
-            renderDocs();
+    <script>
+        // Your Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCUoUZFuxNaUbxNaUbxMdZyEH4xSle2f0TU_HKg", // Ensure this is your actual API Key
+            authDomain: "masters-project-kenneth.firebaseapp.com",
+            projectId: "masters-project-kenneth",
+            storageBucket: "masters-project-kenneth.appspot.com", // This should be projectid.appspot.com
+            messagingSenderId: "685736871672",
+            appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
         };
-        reader.readAsDataURL(file);
 
-        fileInput.value = "";
-    }
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage(); // Initialize Firebase Storage
 
-    function deleteDoc(index) {
-        const docs = loadDocs();
-        docs.splice(index, 1);
-        saveDocs(docs);
-        renderDocs();
-    }
+        let currentUser = null;
+        let userId = null;
+        let unsubscribeDocs = null; // To hold the unsubscribe function for the docs listener
 
-    function downloadDoc(index) {
-        const docs = loadDocs();
-        const file = docs[index];
+        const docFile = document.getElementById('docFile');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const docList = document.getElementById('docList');
+        const loadingDocsMessage = document.getElementById('loadingDocsMessage');
+        const noDocsMessage = document.getElementById('noDocsMessage');
 
-        const link = document.createElement("a");
-        link.href = file.data;
-        link.download = file.name;
-        link.click();
-    }
 
-    document.addEventListener("DOMContentLoaded", renderDocs);
-</script>
+        // --- AUTHENTICATION CHECK ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                userId = user.uid;
+
+                document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
+                document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
+
+                setupDocListener(); // Start listening for documents
+            } else {
+                console.log("No user signed in. Redirecting to login.");
+                window.location.href = "index.html";
+            }
+        });
+
+        function signOutUser() {
+            auth.signOut().then(() => {
+                localStorage.removeItem("LPM_session");
+                localStorage.removeItem("LPM_user_uid");
+                if (unsubscribeDocs) {
+                    unsubscribeDocs();
+                }
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Error signing out:", error);
+                alert("Error signing out: " + error.message);
+            });
+        }
+
+        // --- FIRESTORE / CLOUD STORAGE OPERATIONS ---
+
+        function setupDocListener() {
+            if (!userId) {
+                console.error("User ID not available for document listener.");
+                return;
+            }
+
+            if (unsubscribeDocs) {
+                unsubscribeDocs();
+            }
+
+            loadingDocsMessage.style.display = 'block';
+            noDocsMessage.style.display = 'none';
+            docList.innerHTML = ''; // Clear previous items
+
+            unsubscribeDocs = db.collection(`users/${userId}/documents`)
+                .orderBy("uploadedAt", "desc") // Newest first
+                .onSnapshot(snapshot => {
+                    const documents = snapshot.docs.map(doc => ({
+                        id: doc.id, // Firestore document ID
+                        ...doc.data()
+                    }));
+                    renderDocs(documents);
+                    loadingDocsMessage.style.display = 'none'; // Hide loading message
+                }, error => {
+                    console.error("Error fetching documents:", error);
+                    docList.innerHTML = '<li style="text-align:center;color:#f85149;">Error loading documents.</li>';
+                    loadingDocsMessage.style.display = 'none';
+                });
+        }
+
+        function renderDocs(documents) {
+            docList.innerHTML = '';
+
+            if (documents.length === 0) {
+                noDocsMessage.style.display = 'block';
+                return;
+            }
+
+            documents.forEach(doc => {
+                const item = document.createElement('li');
+                item.classList.add('doc-item');
+
+                // Format uploaded date
+                const uploadedDate = doc.uploadedAt ? doc.uploadedAt.toDate().toLocaleDateString() : 'N/A';
+                const uploadedBy = doc.uploadedBy || 'Unknown';
+
+                item.innerHTML = `
+                    <span class="doc-name">${doc.name}</span>
+                    <span class="doc-uploaded-info">Uploaded by ${uploadedBy} on ${uploadedDate}</span>
+                    <div class="btn-group">
+                        <button class="download-btn" onclick="downloadDoc('${doc.id}', '${doc.downloadURL}', '${doc.name}')">Download</button>
+                        <button class="delete-btn" onclick="deleteDoc('${doc.id}', '${doc.fullPath}')">Delete</button>
+                    </div>
+                `;
+                docList.appendChild(item);
+            });
+        }
+
+        async function uploadDoc() {
+            const file = docFile.files[0];
+
+            if (!file) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            uploadStatus.style.display = 'block';
+            uploadStatus.style.color = '#58a6ff'; // Blue for info/progress
+            uploadStatus.textContent = 'Uploading...';
+
+            const filePath = `users/${userId}/documents/${file.name}`; // Path in Cloud Storage
+            const storageRef = storage.ref(filePath);
+            const uploadTask = storageRef.put(file);
+
+            uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED,
+                (snapshot) => {
+                    // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    uploadStatus.textContent = `Upload is ${progress.toFixed(0)}% done`;
+                },
+                (error) => {
+                    // Handle unsuccessful uploads
+                    console.error("Upload error:", error);
+                    uploadStatus.style.color = '#f85149'; // Red for error
+                    uploadStatus.textContent = `Upload failed: ${error.message}`;
+                    alert("Upload failed: " + error.message);
+                },
+                () => {
+                    // Handle successful uploads on complete
+                    uploadTask.snapshot.ref.getDownloadURL().then(async (downloadURL) => {
+                        try {
+                            await db.collection(`users/${userId}/documents`).add({
+                                name: file.name,
+                                fullPath: filePath, // Store full path for deletion from Storage
+                                downloadURL: downloadURL,
+                                uploadedBy: currentUser.displayName || currentUser.email,
+                                uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                            uploadStatus.style.color = '#3fb950'; // Green for success
+                            uploadStatus.textContent = 'Upload successful!';
+                            docFile.value = ''; // Clear file input
+                            setTimeout(() => { uploadStatus.style.display = 'none'; }, 3000); // Hide status after 3 seconds
+                        } catch (error) {
+                            console.error("Error saving document metadata:", error);
+                            uploadStatus.style.color = '#f85149';
+                            uploadStatus.textContent = `Upload successful, but failed to save metadata: ${error.message}`;
+                        }
+                    });
+                }
+            );
+        }
+
+        window.downloadDoc = (docId, downloadURL, fileName) => { // docId is not strictly needed here but good practice
+            if (downloadURL) {
+                const link = document.createElement("a");
+                link.href = downloadURL;
+                link.download = fileName; // Suggests a filename to the browser
+                document.body.appendChild(link); // Append to body to make it clickable
+                link.click();
+                document.body.removeChild(link); // Clean up
+            } else {
+                alert("Download URL not available.");
+            }
+        };
+
+        window.deleteDoc = async (firestoreDocId, storageFullPath) => {
+            if (confirm(`Are you sure you want to delete this document?`)) {
+                try {
+                    // 1. Delete file from Cloud Storage
+                    const fileRef = storage.ref(storageFullPath);
+                    await fileRef.delete();
+
+                    // 2. Delete metadata from Firestore
+                    await db.collection(`users/${userId}/documents`).doc(firestoreDocId).delete();
+
+                    alert("Document deleted successfully!");
+                } catch (error) {
+                    console.error("Error deleting document:", error);
+                    alert("Failed to delete document: " + error.message);
+                }
+            }
+        };
+
+        // Initial setup for form mode is handled by auth.onAuthStateChanged
+    </script>
 
 </body>
 </html>
