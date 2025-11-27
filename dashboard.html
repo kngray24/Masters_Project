@@ -192,6 +192,21 @@
             justify-content: space-between;
             align-items: center;
         }
+        /* New style for timeline items */
+        .timeline-item {
+            background-color: #21262d;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 4px solid; /* General border for status */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .timeline-item.upcoming { border-left-color: #58a6ff; }
+        .timeline-item.current { border-left-color: #d29922; }
+        .timeline-item.complete { border-left-color: #3fb950; opacity: 0.7; }
+
 
         .task-owner-display {
             font-size: 0.8em;
@@ -317,7 +332,7 @@
             apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
             authDomain: "masters-project-kenneth.firebaseapp.com",
             projectId: "masters-project-kenneth",
-            storageBucket: "masters-project-kenneth.firebasestorage.app",
+            storageBucket: "masters-project-kenneth.appspot.com", // Corrected storageBucket format
             messagingSenderId: "685736871672",
             appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
         };
@@ -358,10 +373,6 @@
                 // Sign-out successful. Clear local storage and redirect.
                 localStorage.removeItem("LPM_session");
                 localStorage.removeItem("LPM_user_uid");
-                // Also clear any data saved in localStorage if you were using it
-                // localStorage.removeItem('projectTasks');
-                // localStorage.removeItem('projectEvents');
-                // localStorage.removeItem('projectRisks');
                 window.location.href = "index.html";
             }).catch((error) => {
                 console.error("Error signing out:", error);
@@ -398,7 +409,7 @@
                 });
 
             // Listen for Timeline Events (real-time)
-            db.collection(`users/${userId}/events`).orderBy("date", "asc") // Assuming 'date' field for events
+            db.collection(`users/${userId}/events`).orderBy("start", "asc") // Order by 'start' date
                 .onSnapshot(snapshot => {
                     const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderTimelineSummary(events);
@@ -408,7 +419,10 @@
                 });
 
             // Listen for Risks (real-time)
-            db.collection(`users/${userId}/risks`).orderBy("priority", "desc") // Assuming 'priority' field for risks
+            db.collection(`users/${userId}/risks`)
+                .orderBy("impact", "desc")        // Order by high impact first
+                .orderBy("probability", "desc")   // Then by high probability
+                .orderBy("createdAt", "desc")     // Then by creation time
                 .onSnapshot(snapshot => {
                     const risks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderRiskSummary(risks);
@@ -457,19 +471,31 @@
             const list = document.getElementById('dashboardTimelineSummary');
             list.innerHTML = '';
 
-            document.getElementById('timelineCount').textContent = events.length;
+            // Filter for current and upcoming events
+            const relevantEvents = events.filter(ev => ev.status === 'current' || ev.status === 'upcoming');
 
-            if (events.length === 0) {
+            document.getElementById('timelineCount').textContent = relevantEvents.length;
+            document.getElementById('timelineDetails').innerHTML = `${events.filter(ev => ev.status === 'complete').length} completed.`;
+
+
+            if (relevantEvents.length === 0) {
                 list.innerHTML =
-                    '<li style="text-align:center;color:#8b949e;">No timeline events.</li>';
+                    '<li style="text-align:center;color:#8b949e;">No current or upcoming timeline events.</li>';
                 return;
             }
 
-            events.slice(0, 5).forEach(ev => { // Display top 5 events
+            relevantEvents.slice(0, 5).forEach(ev => { // Display top 5 relevant events
                 const li = document.createElement('li');
+                // Ensure ev.start and ev.end are Firestore Timestamps before calling toDate()
+                const startDate = ev.start ? ev.start.toDate().toLocaleDateString() : 'N/A';
+                const endDate = ev.end ? ev.end.toDate().toLocaleDateString() : 'N/A';
+                const statusClass = ev.status || 'upcoming'; // Default to upcoming for styling
+
+                li.classList.add('timeline-item', statusClass);
+
                 li.innerHTML = `
                     <span>${ev.title || 'Untitled Event'}</span>
-                    <span>${ev.date ? new Date(ev.date.toDate()).toLocaleDateString() : 'N/A'}</span>
+                    <span>${startDate} - ${endDate} <span style="text-transform: capitalize; font-weight: bold; margin-left: 5px;">(${ev.status})</span></span>
                 `;
                 list.appendChild(li);
             });
@@ -488,7 +514,7 @@
                 return;
             }
 
-            // Find the highest priority risk. Assuming risks are already sorted by priority desc.
+            // The risks array is already sorted by impact/probability (highest first)
             const topRisk = risks[0];
 
             // Get color classes for Impact and Probability
