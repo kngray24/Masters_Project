@@ -134,8 +134,7 @@
             margin-bottom: 20px;
         }
 
-        /* --- Timeline Specific Styles (omitted for brevity, assume they are the same) --- */
-        /* ... (Keep all your existing Timeline CSS here) ... */
+        /* --- Timeline Specific Styles (continued) --- */
 
 
         .controls {
@@ -386,8 +385,7 @@
                 <li><a href="dashboard.html">🏠 Dashboard</a></li>
                 <li><a href="tasks.html">🗂 Tasks</a></li>
                 <li class="active"><a href="timeline.html">📅 Timeline</a></li>
-                <li><a href="risk-log.html">⚠️ Risk Log</a></li>
-                <li><a href="docs.html">📎 Docs</a></li>
+                <li><a href="notes.html">📝 Notes</a></li> <li><a href="docs.html">📎 Docs</a></li>
             </ul>
         </div>
 
@@ -403,8 +401,7 @@
             </div>
 
             <div id="eventForm">
-                <input type="hidden" id="editEventId"> <!-- Changed from editEventIndex -->
-                <input type="text" id="eventTitle" placeholder="Event/Phase Title" required>
+                <input type="hidden" id="editEventId"> <input type="text" id="eventTitle" placeholder="Event/Phase Title" required>
                 <div style="display: flex; gap: 10px;">
                     <input type="date" id="eventStartDate" required style="width: 50%;">
                     <input type="date" id="eventEndDate" required style="width: 50%;">
@@ -451,7 +448,6 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
@@ -662,8 +658,7 @@
                     <div class="roadmap-event-name" title="${event.title}">${event.title}</div>
                     <div class="roadmap-chart">
                         <div class="timeline-bar ${event.status}" style="margin-left: ${offsetPercent}%; width: ${widthPercent}%;">
-                            ${durationDays > 3 ? `${durationDays} Days` : ''} <!-- Show days only if bar is wide enough -->
-                        </div>
+                            ${durationDays > 3 ? `${durationDays} Days` : ''} </div>
                     </div>
                 `;
                 roadmapChart.appendChild(row);

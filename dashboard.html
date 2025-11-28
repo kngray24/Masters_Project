@@ -123,6 +123,9 @@
             flex-grow: 1;
             padding: 20px;
             overflow-y: auto;
+            /* Added constraint for better metric alignment */
+            max-width: 1400px; 
+            margin: 0 auto;
         }
 
         h1 {
@@ -143,8 +146,9 @@
         }
 
         .metrics-grid {
+            /* Modified to 2 columns and constrained width */
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(2, 350px);
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -169,19 +173,31 @@
         }
 
         .main-area-grid {
+            /* Modified to give more space to the Notes box (1fr) compared to To-Do (1.5fr) */
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1.5fr 1fr;
             gap: 20px;
         }
 
         /* Snippets styling */
         .task-list-snippet,
-        .risk-snapshot,
         .timeline-summary {
             list-style: none;
             padding: 0;
             margin: 0;
         }
+        
+        /* New styling for Notes content to make it visible */
+        #notesContent {
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+            max-height: 250px; /* Constrain height to keep it a snapshot */
+            overflow-y: auto;
+            font-size: 0.95em;
+            color: #c9d1d9;
+            min-height: 100px; /* Ensure box is large enough to see easily */
+            cursor: pointer; /* Indicate it's clickable */
+        }
+
 
         .task-item {
             background-color: #21262d;
@@ -226,12 +242,6 @@
         .status.blocked { background-color: #5c2c31; color: #f85149; }
         .status.done { background-color: #0c431b; color: #3fb950; } /* Added for completed tasks */
 
-
-        /* --- Risk Color Styles (based on assumed risk-log.html) --- */
-        .risk-high { color: #f85149; font-weight: bold; } /* Red */
-        .risk-medium { color: #d29922; font-weight: bold; } /* Yellow/Orange */
-        .risk-low { color: #3fb950; font-weight: bold; } /* Green */
-
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -262,8 +272,7 @@
                 <li class="active"><a href="dashboard.html">🏠 Dashboard</a></li>
                 <li><a href="tasks.html">🗂 Tasks</a></li>
                 <li><a href="timeline.html">📅 Timeline</a></li>
-                <li><a href="risk-log.html">⚠️ Risk Log</a></li>
-                <li><a href="docs.html">📎 Docs</a></li>
+                <li><a href="notes.html">📝 Notes</a></li> <li><a href="docs.html">📎 Docs</a></li>
             </ul>
         </div>
 
@@ -282,13 +291,7 @@
                     <p class="metric-number" id="timelineCount">--</p>
                     <p class="metric-detail" id="timelineDetails">--</p>
                 </div>
-
-                <div class="card metric-card">
-                    <h4>Open Risks</h4>
-                    <p class="metric-number" id="riskCount">--</p>
-                    <p class="metric-detail" id="riskDetails">--</p>
                 </div>
-            </div>
 
             <div class="main-area-grid">
 
@@ -300,9 +303,9 @@
                 </div>
 
                 <div class="card">
-                    <h4>Highest Priority Risk Snapshot</h4>
-                    <div id="riskSnapshotContent">
-                        <p style="text-align:center;color:#8b949e;">Loading risks...</p>
+                    <h4>📝 Project Notes</h4>
+                    <div id="notesContent">
+                        <p style="text-align:center;color:#8b949e;">Loading notes...</p>
                     </div>
                 </div>
 
@@ -321,7 +324,6 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
@@ -382,15 +384,6 @@
 
         // --- FIRESTORE DATA FUNCTIONS ---
 
-        // Helper function to get the CSS class for risk level
-        function getRiskColor(level) {
-            const normalizedLevel = level ? level.toLowerCase().trim() : '';
-            if (normalizedLevel === 'high') return 'risk-high';
-            if (normalizedLevel === 'medium') return 'risk-medium';
-            if (normalizedLevel === 'low') return 'risk-low';
-            return '';
-        }
-
         // Setup real-time listeners for all dashboard data
         function setupFirestoreListeners() {
             if (!userId) {
@@ -398,7 +391,7 @@
                 return;
             }
 
-            // Listen for Tasks (real-time)
+            // 1. Listen for Tasks (real-time)
             db.collection(`users/${userId}/tasks`).orderBy("createdAt", "asc")
                 .onSnapshot(snapshot => {
                     const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -408,7 +401,7 @@
                     document.getElementById('dashboardTaskList').innerHTML = '<li style="text-align:center;color:#f85149;">Error loading tasks.</li>';
                 });
 
-            // Listen for Timeline Events (real-time)
+            // 2. Listen for Timeline Events (real-time)
             db.collection(`users/${userId}/events`).orderBy("start", "asc") // Order by 'start' date
                 .onSnapshot(snapshot => {
                     const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -418,21 +411,20 @@
                     document.getElementById('dashboardTimelineSummary').innerHTML = '<li style="text-align:center;color:#f85149;">Error loading timeline events.</li>';
                 });
 
-            // Listen for Risks (real-time)
-            db.collection(`users/${userId}/risks`)
-                .orderBy("impact", "desc")        // Order by high impact first
-                .orderBy("probability", "desc")   // Then by high probability
-                .orderBy("createdAt", "desc")     // Then by creation time
-                .onSnapshot(snapshot => {
-                    const risks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderRiskSummary(risks);
+            // 3. Listen for NOTES (new listener)
+            // We assume notes will be stored as a single document in a specific collection: 'users/{userId}/projectData/notesDoc'
+            db.collection(`users/${userId}/projectData`).doc('notesDoc')
+                .onSnapshot(doc => {
+                    renderNotesSummary(doc.data() || {});
                 }, error => {
-                    console.error("Error fetching risks:", error);
-                    document.getElementById('riskSnapshotContent').innerHTML = '<p style="text-align:center;color:#f85149;">Error loading risks.</p>';
+                    console.error("Error fetching notes:", error);
+                    document.getElementById('notesContent').innerHTML = '<p style="text-align:center;color:#f85149;">Error loading notes. Check notes.html setup.</p>';
                 });
+
+            // REMOVED: Risk Listener is no longer here
         }
 
-        /* Render Tasks */
+        /* Render Tasks (UNMODIFIED) */
         function renderTaskSummary(tasks) {
             const active = tasks.filter(t => !t.completed);
             const completed = tasks.filter(t => t.completed);
@@ -466,7 +458,7 @@
             });
         }
 
-        /* Render Timeline */
+        /* Render Timeline (UNMODIFIED) */
         function renderTimelineSummary(events) {
             const list = document.getElementById('dashboardTimelineSummary');
             list.innerHTML = '';
@@ -501,44 +493,21 @@
             });
         }
 
-        /* Render Risks */
-        function renderRiskSummary(risks) {
-            document.getElementById('riskCount').textContent = risks.length;
+        /* Render Notes (NEW FUNCTION) */
+        function renderNotesSummary(notesData) {
+            const container = document.getElementById('notesContent');
+            // Using the value from the Firestore document 'text' field
+            const notesText = notesData.text || 'No project notes have been saved yet. Click here to add them.';
 
-            const activeRisks = risks.filter(r => r.status === 'active' || r.status === 'monitored');
-            const highImpactRisks = risks.filter(r => r.impact === 'high' && (r.status === 'active' || r.status === 'monitored'));
-            
-            let riskDetailText = '';
-            if (risks.length === 0) {
-                riskDetailText = 'No risks logged.';
-            } else {
-                riskDetailText = `${activeRisks.length} active, ${highImpactRisks.length} high-impact.`;
-            }
-            document.getElementById('riskDetails').textContent = riskDetailText;
+            // The content is wrapped in a pre-wrap div for better formatting of raw text
+            container.innerHTML = `<p>${notesText}</p>`; 
 
-
-            const container = document.getElementById('riskSnapshotContent');
-            container.innerHTML = '';
-
-            if (risks.length === 0) {
-                container.innerHTML =
-                    '<p style="text-align:center;color:#8b949e;">No risks.</p>';
-                return;
-            }
-
-            // The risks array is already sorted by impact/probability (highest first)
-            const topRisk = risks[0];
-
-            // Get color classes for Impact and Probability
-            const impactClass = getRiskColor(topRisk.impact || 'low');
-            const probClass = getRiskColor(topRisk.probability || 'low');
-
-            container.innerHTML = `
-                <p><strong>${topRisk.description || 'No description'}</strong></p>
-                <p>Impact: <span class="${impactClass}">${topRisk.impact || 'Low'}</span></p>
-                <p>Probability: <span class="${probClass}">${topRisk.probability || 'Low'}</span></p>
-            `;
+            // Make the notes clickable to edit them (assuming notes.html will be for editing)
+            container.onclick = () => {
+                window.location.href = 'notes.html';
+            };
         }
+        // REMOVED: renderRiskSummary function is no longer here
     </script>
 </body>
 </html>
