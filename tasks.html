@@ -271,9 +271,9 @@
             transition: 0.2s;
         }
         
-        /* STYLES FOR ACTION BUTTONS */
+        /* NEW STYLES FOR BUTTONS */
         .comment-button { 
-            color: #58a6ff; /* Blue for comment button */ 
+            color: #58a6ff; /* A nice blue color for comment button */ 
         }
 
         .edit-button { color: #d29922; }
@@ -300,12 +300,21 @@
         }
 
         .comments-input-bar input {
-            flex-grow: 1;
             padding: 8px;
             border: 1px solid #30363d;
             border-radius: 4px;
             background-color: #0d1117;
             color: #c9d1d9;
+        }
+
+        /* NEW STYLES for the two inputs inside the comment bar */
+        #commenter-input-${task.id} {
+            width: 120px; /* Give the name field a fixed width */
+            flex-grow: 0;
+        }
+        
+        #comment-input-${task.id} {
+            flex-grow: 1; /* Let the comment text field take the remaining space */
         }
 
         .comment-submit-btn {
@@ -344,23 +353,7 @@
             margin-bottom: 3px;
             font-weight: 500;
         }
-        
-        /* NEW STYLES FOR DELETE COMMENT BUTTON */
-        .delete-comment-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #f85149; /* Red color for delete */
-            font-size: 0.9em;
-            margin-left: 10px;
-            padding: 0;
-            opacity: 0.6;
-            transition: opacity 0.2s;
-        }
 
-        .delete-comment-btn:hover {
-            opacity: 1;
-        }
 
         .footer {
             margin-top: 40px;
@@ -408,7 +401,7 @@
 
                     <button id="addTaskButton">Add Task</button>
                     <button id="saveEditButton" style="display:none;">Save Edit</button>
-                    <button id="cancelEditButton">Cancel</button>
+                    <button id="cancelEditButton" style="display:none;">Cancel</button>
                 </div>
 
                 <ul class="task-list" id="taskList">
@@ -495,7 +488,7 @@
 
         // --- FIRESTORE COMMENT OPERATIONS ---
 
-        // Function to handle displaying comments (UPDATED with Delete Button)
+        // Function to handle displaying comments
         function renderComments(taskId, comments) {
             const commentListEl = document.getElementById(`comment-list-${taskId}`);
             if (!commentListEl) return;
@@ -510,23 +503,14 @@
             comments.forEach(comment => {
                 const li = document.createElement('li');
                 li.classList.add('comment-item');
-                
+                // Check if createdAt exists and convert timestamp, otherwise use a placeholder
                 const time = comment.createdAt && comment.createdAt.seconds 
                              ? new Date(comment.createdAt.seconds * 1000).toLocaleString() 
                              : 'Just now';
 
                 li.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div class="comment-content">
-                            <div class="comment-meta">${comment.commenter} - ${time}</div>
-                            <div>${comment.text}</div>
-                        </div>
-                        <button class="delete-comment-btn" 
-                                onclick="event.stopPropagation(); deleteComment('${taskId}', '${comment.id}')"
-                                title="Delete Comment">
-                            ❌
-                        </button>
-                    </div>
+                    <div class="comment-meta">${comment.commenter} - ${time}</div>
+                    <div>${comment.text}</div>
                 `;
                 commentListEl.appendChild(li);
             });
@@ -534,12 +518,14 @@
 
         // Real-time listener for comments on a specific task
         function setupCommentListener(taskId) {
+             // Check if the comment list element exists before setting up the listener
              if (!document.getElementById(`comment-list-${taskId}`)) {
+                 // Listener will be set up when the comment section is explicitly opened
                  return;
              }
              
              db.collection(`users/${userId}/tasks`).doc(taskId).collection('comments')
-                .orderBy("createdAt", "asc") 
+                .orderBy("createdAt", "asc") // Order by creation time, oldest first
                 .onSnapshot(snapshot => {
                     const comments = snapshot.docs.map(doc => ({
                         id: doc.id, 
@@ -554,12 +540,15 @@
                     }
                 });
         }
-        
+
         // Function to handle submitting a new comment
         window.submitComment = async (taskId) => {
             const commentInput = document.getElementById(`comment-input-${taskId}`);
-            const commentText = commentInput.value.trim();
+            const commenterInput = document.getElementById(`commenter-input-${taskId}`); // NEW: Get the new input field
             
+            const commentText = commentInput.value.trim();
+            const explicitCommenter = commenterInput.value.trim(); // NEW: Get the commenter name value
+
             if (!commentText) {
                 alert('Comment text is required.');
                 return;
@@ -569,13 +558,18 @@
                 return;
             }
             
+            // Determine the commenter name: Use the explicit input, OR the authenticated user's name/email, OR 'Anonymous'.
+            const finalCommenterName = explicitCommenter || (currentUser.displayName || currentUser.email || 'Anonymous');
+            
             try {
+                // Save comment to a sub-collection under the specific task document
                 await db.collection(`users/${userId}/tasks`).doc(taskId).collection('comments').add({
                     text: commentText,
-                    commenter: currentUser.displayName || currentUser.email || 'Anonymous', 
+                    commenter: finalCommenterName, // MODIFIED: Use the determined name
                     createdAt: firebase.firestore.FieldValue.serverTimestamp() 
                 });
                 
+                // Clear the comment input field, but keep the commenter name pre-filled
                 commentInput.value = '';
                 
             } catch (error) {
@@ -583,27 +577,6 @@
                 alert("Failed to add comment: " + error.message);
             }
         }
-        
-        // --- FIRESTORE COMMENT DELETION (NEW) ---
-        window.deleteComment = async (taskId, commentId) => {
-            if (!userId) {
-                alert("User not authenticated.");
-                return;
-            }
-
-            if (!confirm("Are you sure you want to delete this comment?")) {
-                return;
-            }
-
-            try {
-                await db.collection(`users/${userId}/tasks`).doc(taskId).collection('comments').doc(commentId).delete();
-                console.log("Comment successfully deleted!");
-                // The comment listener handles the UI update
-            } catch (error) {
-                console.error("Error deleting comment:", error);
-                alert("Failed to delete comment: " + error.message);
-            }
-        };
 
 
         // --- FIRESTORE TASK OPERATIONS ---
@@ -614,16 +587,17 @@
                 return;
             }
 
+            // Unsubscribe from any previous listener to avoid duplicates
             if (unsubscribeTasks) {
                 unsubscribeTasks();
             }
 
             // Real-time listener for tasks
             unsubscribeTasks = db.collection(`users/${userId}/tasks`)
-                .orderBy("createdAt", "desc") 
+                .orderBy("createdAt", "desc") // Order by creation time, newest first
                 .onSnapshot(snapshot => {
                     const tasks = snapshot.docs.map(doc => ({
-                        id: doc.id, 
+                        id: doc.id, // Store Firestore document ID
                         ...doc.data()
                     }));
                     renderTasks(tasks);
@@ -637,13 +611,13 @@
             if (mode === 'add') {
                 editTaskIdInput.value = '';
                 taskInput.value = '';
-                taskOwnerInput.value = currentUser ? (currentUser.displayName || currentUser.email) : ''; 
+                taskOwnerInput.value = currentUser ? (currentUser.displayName || currentUser.email) : ''; // Pre-fill owner with current user
                 addTaskButton.style.display = 'block';
                 saveEditButton.style.display = 'none';
                 cancelEditButton.style.display = 'none';
                 taskInput.placeholder = 'Add new task description';
             } else { // mode === 'edit'
-                editTaskIdInput.value = task.id; 
+                editTaskIdInput.value = task.id; // Store Firestore document ID
                 taskInput.value = task.text;
                 taskOwnerInput.value = task.owner === 'Unassigned' ? '' : task.owner;
                 addTaskButton.style.display = 'none';
@@ -653,8 +627,8 @@
             }
         }
 
-        // MODIFIED: Includes HTML structure for comments section and the comment button
-        function renderTasks(tasks) { 
+        // MODIFIED: Includes HTML structure for comments section and the new comment button
+        function renderTasks(tasks) { // Takes tasks array as argument
             taskList.innerHTML = '';
 
             if (tasks.length === 0) {
@@ -662,14 +636,16 @@
                 return;
             }
 
-            tasks.forEach(task => { 
+            tasks.forEach(task => { // Iterate through tasks directly
                 const li = document.createElement('li');
                 li.classList.add('task-item');
                 if (task.completed) li.classList.add('completed');
                 
+                // Determine initial visibility of the comment section
                 const isCompleted = task.completed || false;
                 const initialDisplay = isCompleted ? 'block' : 'none'; 
 
+                // Using task.id for actions
                 li.innerHTML = `
                     <div class="task-item-header">
                         <div class="task-details" onclick="toggleTask('${task.id}')">
@@ -689,6 +665,7 @@
                             </ul>
                         
                         <div class="comments-input-bar">
+                            <input type="text" id="commenter-input-${task.id}" placeholder="Your Name (e.g., Ken)"> 
                             <input type="text" id="comment-input-${task.id}" placeholder="Add a comment on this task">
                             <button class="comment-submit-btn" onclick="submitComment('${task.id}')">Comment</button>
                         </div>
@@ -718,7 +695,7 @@
                     text: text,
                     owner: owner,
                     completed: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() // Firestore timestamp for sorting
                 });
                 setFormMode('add');
             } catch (error) {
@@ -753,12 +730,14 @@
             }
         }
 
-        // Function to toggle the visibility of the comment section
+        // Function to toggle the visibility of the comment section (New Feature)
         window.commentTask = (taskId) => {
             const commentsSection = document.getElementById(`comments-for-${taskId}`);
             if (commentsSection) {
+                // Toggle the display property
                 commentsSection.style.display = commentsSection.style.display === 'block' ? 'none' : 'block';
                 
+                // If we're showing it, ensure the listener is set up to load comments
                 if (commentsSection.style.display === 'block') {
                     setupCommentListener(taskId);
                 }
@@ -781,7 +760,7 @@
             }
         };
 
-        // Toggles the completion status and comment section visibility
+        // MODIFIED: Toggles the visibility of the comment section
         window.toggleTask = async (taskId) => { 
             try {
                 const doc = await db.collection(`users/${userId}/tasks`).doc(taskId).get();
@@ -793,6 +772,9 @@
                         completed: newStatus
                     });
                     
+                    // The main task listener will re-render the task list, which will handle
+                    // showing/hiding the comment section based on the 'completed' status
+                    // and will call setupCommentListener if completed.
                 } else {
                     console.warn("Task not found for toggling:", taskId);
                 }
@@ -823,7 +805,7 @@
             }
         });
 
-        // Initialize form mode when the page loads
+        // Initialize form mode when the page loads, but tasks will be rendered by the listener
         document.addEventListener('DOMContentLoaded', () => {
             setFormMode('add');
         });
