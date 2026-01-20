@@ -204,10 +204,10 @@
 
         .task-item {
             background-color: #21262d;
-            padding: 12px; /* Base padding for the whole item */
+            padding: 12px; 
             margin-bottom: 10px;
             border-radius: 4px;
-            display: block; /* Changed to block to allow children to stack */
+            display: block; 
             border-left: 4px solid #58a6ff;
             transition: background-color 0.2s;
         }
@@ -237,8 +237,8 @@
             display: flex;
             align-items: center;
             flex-grow: 1;
-            cursor: pointer; /* Clickable area for toggling completion */
-            padding: 0; /* Remove existing padding/margin conflicts */
+            cursor: pointer; 
+            padding: 0; 
         }
 
         .task-text {
@@ -257,6 +257,14 @@
             white-space: nowrap;
         }
 
+        /* --- UPDATED: Date styling --- */
+        .task-date-display {
+            font-size: 0.75em;
+            color: #8b949e;
+            margin-left: 15px;
+            font-style: italic;
+        }
+
         .task-item.completed .task-owner-display {
             background-color: #8b949e22;
             color: #8b949e;
@@ -271,15 +279,10 @@
             transition: 0.2s;
         }
         
-        /* NEW STYLES FOR BUTTONS */
-        .comment-button { 
-            color: #58a6ff; /* A nice blue color for comment button */ 
-        }
-
+        .comment-button { color: #58a6ff; }
         .edit-button { color: #d29922; }
         .delete-button { color: #f85149; }
         
-        /* --- New Styles for Comments Section --- */
         .comments-section {
             margin-top: 10px;
             padding-top: 10px;
@@ -305,16 +308,6 @@
             border-radius: 4px;
             background-color: #0d1117;
             color: #c9d1d9;
-        }
-
-        /* NEW STYLES for the two inputs inside the comment bar */
-        #commenter-input-${task.id} {
-            width: 120px; /* Give the name field a fixed width */
-            flex-grow: 0;
-        }
-        
-        #comment-input-${task.id} {
-            flex-grow: 1; /* Let the comment text field take the remaining space */
         }
 
         .comment-submit-btn {
@@ -353,7 +346,6 @@
             margin-bottom: 3px;
             font-weight: 500;
         }
-
 
         .footer {
             margin-top: 40px;
@@ -420,7 +412,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
 
     <script>
-        // Your Firebase Configuration (make sure this is correct from your Project Settings)
         const firebaseConfig = {
             apiKey: "AIzaSyCUoUZFuxNaUbxMdZyEH4xSle2f0TU_HKg",
             authDomain: "masters-project-kenneth.firebaseapp.com",
@@ -430,16 +421,15 @@
             appId: "1:685736871672:web:179cfc1e9cb361edd49d0d"
         };
 
-        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        let currentUser = null; // To store the authenticated user object
-        let userId = null;      // To store the user's UID
-        let unsubscribeTasks = null; // To hold the unsubscribe function for the tasks listener
+        let currentUser = null; 
+        let userId = null;      
+        let unsubscribeTasks = null; 
 
         const taskInput = document.getElementById('taskInput');
         const taskOwnerInput = document.getElementById('taskOwner');
@@ -449,33 +439,22 @@
         const editTaskIdInput = document.getElementById('editTaskId'); 
         const taskList = document.getElementById('taskList');
 
-        // --- AUTHENTICATION CHECK ---
         auth.onAuthStateChanged(user => {
             if (user) {
-                // User is signed in.
                 currentUser = user;
                 userId = user.uid;
-
-                // Update UI with user info
                 document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
                 document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
-
-                // Start listening for tasks once user is authenticated
                 setupTaskListener();
-
             } else {
-                // No user is signed in. Redirect to login page.
-                console.log("No user signed in. Redirecting to login.");
                 window.location.href = "index.html";
             }
         });
 
         function signOutUser() {
             auth.signOut().then(() => {
-                // Sign-out successful. Clear local storage (if any was used) and redirect.
                 localStorage.removeItem("LPM_session");
                 localStorage.removeItem("LPM_user_uid");
-                // If there's an active Firestore listener, unsubscribe it
                 if (unsubscribeTasks) {
                     unsubscribeTasks();
                 }
@@ -486,28 +465,20 @@
             });
         }
 
-        // --- FIRESTORE COMMENT OPERATIONS ---
-
-        // Function to handle displaying comments
         function renderComments(taskId, comments) {
             const commentListEl = document.getElementById(`comment-list-${taskId}`);
             if (!commentListEl) return;
-
             commentListEl.innerHTML = '';
-            
             if (comments.length === 0) {
                 commentListEl.innerHTML = '<p style="color:#8b949e; margin-bottom: 0;">No comments yet.</p>';
                 return;
             }
-
             comments.forEach(comment => {
                 const li = document.createElement('li');
                 li.classList.add('comment-item');
-                // Check if createdAt exists and convert timestamp, otherwise use a placeholder
                 const time = comment.createdAt && comment.createdAt.seconds 
                              ? new Date(comment.createdAt.seconds * 1000).toLocaleString() 
                              : 'Just now';
-
                 li.innerHTML = `
                     <div class="comment-meta">${comment.commenter} - ${time}</div>
                     <div>${comment.text}</div>
@@ -516,94 +487,40 @@
             });
         }
 
-        // Real-time listener for comments on a specific task
         function setupCommentListener(taskId) {
-             // Check if the comment list element exists before setting up the listener
-             if (!document.getElementById(`comment-list-${taskId}`)) {
-                 // Listener will be set up when the comment section is explicitly opened
-                 return;
-             }
-             
+             if (!document.getElementById(`comment-list-${taskId}`)) return;
              db.collection(`users/${userId}/tasks`).doc(taskId).collection('comments')
-                .orderBy("createdAt", "asc") // Order by creation time, oldest first
+                .orderBy("createdAt", "asc")
                 .onSnapshot(snapshot => {
-                    const comments = snapshot.docs.map(doc => ({
-                        id: doc.id, 
-                        ...doc.data()
-                    }));
+                    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderComments(taskId, comments);
-                }, error => {
-                    console.error(`Error fetching comments for task ${taskId}:`, error);
-                    const commentListEl = document.getElementById(`comment-list-${taskId}`);
-                    if(commentListEl) {
-                        commentListEl.innerHTML = '<li style="color:#f85149;">Error loading comments.</li>';
-                    }
                 });
         }
 
-        // Function to handle submitting a new comment
         window.submitComment = async (taskId) => {
             const commentInput = document.getElementById(`comment-input-${taskId}`);
-            const commenterInput = document.getElementById(`commenter-input-${taskId}`); // NEW: Get the new input field
-            
+            const commenterInput = document.getElementById(`commenter-input-${taskId}`); 
             const commentText = commentInput.value.trim();
-            const explicitCommenter = commenterInput.value.trim(); // NEW: Get the commenter name value
-
-            if (!commentText) {
-                alert('Comment text is required.');
-                return;
-            }
-            if (!userId) {
-                alert("User not authenticated.");
-                return;
-            }
-            
-            // Determine the commenter name: Use the explicit input, OR the authenticated user's name/email, OR 'Anonymous'.
+            const explicitCommenter = commenterInput.value.trim();
+            if (!commentText) { alert('Comment text is required.'); return; }
             const finalCommenterName = explicitCommenter || (currentUser.displayName || currentUser.email || 'Anonymous');
-            
             try {
-                // Save comment to a sub-collection under the specific task document
                 await db.collection(`users/${userId}/tasks`).doc(taskId).collection('comments').add({
                     text: commentText,
-                    commenter: finalCommenterName, // MODIFIED: Use the determined name
+                    commenter: finalCommenterName,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp() 
                 });
-                
-                // Clear the comment input field, but keep the commenter name pre-filled
                 commentInput.value = '';
-                
-            } catch (error) {
-                console.error("Error adding comment:", error);
-                alert("Failed to add comment: " + error.message);
-            }
+            } catch (error) { console.error("Error adding comment:", error); }
         }
 
-
-        // --- FIRESTORE TASK OPERATIONS ---
-
         function setupTaskListener() {
-            if (!userId) {
-                console.error("User ID not available for task listener.");
-                return;
-            }
-
-            // Unsubscribe from any previous listener to avoid duplicates
-            if (unsubscribeTasks) {
-                unsubscribeTasks();
-            }
-
-            // Real-time listener for tasks
+            if (unsubscribeTasks) unsubscribeTasks();
             unsubscribeTasks = db.collection(`users/${userId}/tasks`)
-                .orderBy("createdAt", "desc") // Order by creation time, newest first
+                .orderBy("createdAt", "desc")
                 .onSnapshot(snapshot => {
-                    const tasks = snapshot.docs.map(doc => ({
-                        id: doc.id, // Store Firestore document ID
-                        ...doc.data()
-                    }));
+                    const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderTasks(tasks);
-                }, error => {
-                    console.error("Error fetching tasks:", error);
-                    taskList.innerHTML = '<li style="text-align:center;color:#f85149;">Error loading tasks.</li>';
                 });
         }
 
@@ -611,46 +528,46 @@
             if (mode === 'add') {
                 editTaskIdInput.value = '';
                 taskInput.value = '';
-                taskOwnerInput.value = currentUser ? (currentUser.displayName || currentUser.email) : ''; // Pre-fill owner with current user
+                taskOwnerInput.value = currentUser ? (currentUser.displayName || currentUser.email) : '';
                 addTaskButton.style.display = 'block';
                 saveEditButton.style.display = 'none';
                 cancelEditButton.style.display = 'none';
-                taskInput.placeholder = 'Add new task description';
-            } else { // mode === 'edit'
-                editTaskIdInput.value = task.id; // Store Firestore document ID
+            } else {
+                editTaskIdInput.value = task.id;
                 taskInput.value = task.text;
                 taskOwnerInput.value = task.owner === 'Unassigned' ? '' : task.owner;
                 addTaskButton.style.display = 'none';
                 saveEditButton.style.display = 'block';
                 cancelEditButton.style.display = 'block';
-                taskInput.placeholder = 'Edit task description';
             }
         }
 
-        // MODIFIED: Includes HTML structure for comments section and the new comment button
-        function renderTasks(tasks) { // Takes tasks array as argument
+        /* --- UPDATED: renderTasks with date/time logic --- */
+        function renderTasks(tasks) {
             taskList.innerHTML = '';
-
             if (tasks.length === 0) {
                 taskList.innerHTML = '<p style="text-align:center;color:#8b949e;">No tasks yet.</p>';
                 return;
             }
-
-            tasks.forEach(task => { // Iterate through tasks directly
+            tasks.forEach(task => {
                 const li = document.createElement('li');
                 li.classList.add('task-item');
                 if (task.completed) li.classList.add('completed');
                 
-                // Determine initial visibility of the comment section
                 const isCompleted = task.completed || false;
                 const initialDisplay = isCompleted ? 'block' : 'none'; 
 
-                // Using task.id for actions
+                // Format the createdAt timestamp
+                const creationTime = task.createdAt && task.createdAt.toDate 
+                                     ? task.createdAt.toDate().toLocaleString() 
+                                     : 'Syncing...';
+
                 li.innerHTML = `
                     <div class="task-item-header">
                         <div class="task-details" onclick="toggleTask('${task.id}')">
                             <span class="task-text">${task.text}</span>
                             <span class="task-owner-display">${task.owner || 'Unassigned'}</span>
+                            <span class="task-date-display">${creationTime}</span>
                         </div>
                         <div class="task-actions">
                             <button class="comment-button" onclick="event.stopPropagation(); commentTask('${task.id}')">💬</button> 
@@ -658,158 +575,75 @@
                             <button class="delete-button" onclick="event.stopPropagation(); deleteTask('${task.id}')">🗑️</button>
                         </div>
                     </div>
-
                     <div class="comments-section" id="comments-for-${task.id}" style="display: ${initialDisplay};">
                         <h4>Comments</h4>
-                        <ul class="comment-list" id="comment-list-${task.id}">
-                            </ul>
-                        
+                        <ul class="comment-list" id="comment-list-${task.id}"></ul>
                         <div class="comments-input-bar">
-                            <input type="text" id="commenter-input-${task.id}" placeholder="Your Name (e.g., Ken)"> 
-                            <input type="text" id="comment-input-${task.id}" placeholder="Add a comment on this task">
+                            <input type="text" id="commenter-input-${task.id}" placeholder="Your Name"> 
+                            <input type="text" id="comment-input-${task.id}" placeholder="Add a comment">
                             <button class="comment-submit-btn" onclick="submitComment('${task.id}')">Comment</button>
                         </div>
                     </div>
                     `;
-
                 taskList.appendChild(li);
-                
-                // If completed, fetch and display comments immediately
-                if (isCompleted) {
-                    setupCommentListener(task.id);
-                }
+                if (isCompleted) setupCommentListener(task.id);
             });
         }
 
         async function addTask() {
             const text = taskInput.value.trim();
             const owner = taskOwnerInput.value.trim() || 'Unassigned';
-
-            if (!text) {
-                alert('Task description required.');
-                return;
-            }
-
+            if (!text) { alert('Task description required.'); return; }
             try {
                 await db.collection(`users/${userId}/tasks`).add({
                     text: text,
                     owner: owner,
                     completed: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp() // Firestore timestamp for sorting
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() 
                 });
                 setFormMode('add');
-            } catch (error) {
-                console.error("Error adding task:", error);
-                alert("Failed to add task: " + error.message);
-            }
+            } catch (error) { console.error("Error adding task:", error); }
         }
 
         async function saveEditedTask() {
             const taskId = editTaskIdInput.value;
             const text = taskInput.value.trim();
             const owner = taskOwnerInput.value.trim() || 'Unassigned';
-
-            if (!text) {
-                alert('Task description required.');
-                return;
-            }
-            if (!taskId) {
-                alert('No task selected for editing.');
-                return;
-            }
-
+            if (!text || !taskId) return;
             try {
-                await db.collection(`users/${userId}/tasks`).doc(taskId).update({
-                    text: text,
-                    owner: owner
-                });
+                await db.collection(`users/${userId}/tasks`).doc(taskId).update({ text: text, owner: owner });
                 setFormMode('add');
-            } catch (error) {
-                console.error("Error updating task:", error);
-                alert("Failed to update task: " + error.message);
-            }
+            } catch (error) { console.error("Error updating task:", error); }
         }
 
-        // Function to toggle the visibility of the comment section (New Feature)
         window.commentTask = (taskId) => {
-            const commentsSection = document.getElementById(`comments-for-${taskId}`);
-            if (commentsSection) {
-                // Toggle the display property
-                commentsSection.style.display = commentsSection.style.display === 'block' ? 'none' : 'block';
-                
-                // If we're showing it, ensure the listener is set up to load comments
-                if (commentsSection.style.display === 'block') {
-                    setupCommentListener(taskId);
-                }
-            } else {
-                console.warn("Comments section not found for task:", taskId);
+            const section = document.getElementById(`comments-for-${taskId}`);
+            if (section) {
+                section.style.display = section.style.display === 'block' ? 'none' : 'block';
+                if (section.style.display === 'block') setupCommentListener(taskId);
             }
         };
 
-        // Global functions for event handlers
         window.editTask = async (taskId) => { 
-            try {
-                const doc = await db.collection(`users/${userId}/tasks`).doc(taskId).get();
-                if (doc.exists) {
-                    setFormMode('edit', { id: doc.id, ...doc.data() });
-                } else {
-                    console.warn("Task not found for editing:", taskId);
-                }
-            } catch (error) {
-                console.error("Error fetching task for edit:", error);
-            }
+            const doc = await db.collection(`users/${userId}/tasks`).doc(taskId).get();
+            if (doc.exists) setFormMode('edit', { id: doc.id, ...doc.data() });
         };
 
-        // MODIFIED: Toggles the visibility of the comment section
         window.toggleTask = async (taskId) => { 
-            try {
-                const doc = await db.collection(`users/${userId}/tasks`).doc(taskId).get();
-                if (doc.exists) {
-                    const currentStatus = doc.data().completed;
-                    const newStatus = !currentStatus;
-                    
-                    await db.collection(`users/${userId}/tasks`).doc(taskId).update({
-                        completed: newStatus
-                    });
-                    
-                    // The main task listener will re-render the task list, which will handle
-                    // showing/hiding the comment section based on the 'completed' status
-                    // and will call setupCommentListener if completed.
-                } else {
-                    console.warn("Task not found for toggling:", taskId);
-                }
-            } catch (error) {
-                console.error("Error toggling task status:", error);
-                alert("Failed to toggle task status: " + error.message);
+            const doc = await db.collection(`users/${userId}/tasks`).doc(taskId).get();
+            if (doc.exists) {
+                await db.collection(`users/${userId}/tasks`).doc(taskId).update({ completed: !doc.data().completed });
             }
         };
 
         window.deleteTask = async (taskId) => { 
-            if (confirm(`Delete this task?`)) { 
-                try {
-                    await db.collection(`users/${userId}/tasks`).doc(taskId).delete();
-                } catch (error) {
-                    console.error("Error deleting task:", error);
-                    alert("Failed to delete task: " + error.message);
-                }
-            }
+            if (confirm(`Delete this task?`)) await db.collection(`users/${userId}/tasks`).doc(taskId).delete();
         };
 
         addTaskButton.onclick = addTask;
         saveEditButton.onclick = saveEditedTask;
         cancelEditButton.onclick = () => setFormMode('add');
-
-        taskInput.addEventListener('keypress', e => {
-            if (e.key === 'Enter') {
-                editTaskIdInput.value ? saveEditedTask() : addTask();
-            }
-        });
-
-        // Initialize form mode when the page loads, but tasks will be rendered by the listener
-        document.addEventListener('DOMContentLoaded', () => {
-            setFormMode('add');
-        });
+        document.addEventListener('DOMContentLoaded', () => setFormMode('add'));
     </script>
-
 </body>
 </html>
