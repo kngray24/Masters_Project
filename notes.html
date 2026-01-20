@@ -139,15 +139,28 @@
             border-radius: 6px;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            min-height: 80%; /* Takes up most of the content area */
+            min-height: 400px; /* Adjusted height for both boxes */
             display: flex;
             flex-direction: column;
+            margin-bottom: 20px; /* Space between the two boxes */
+        }
+        
+        /* New Styles for the additional box */
+        .suggestion-container {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            min-height: 200px; /* Smaller height for the suggestion box */
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px; /* Space above the box */
         }
 
-        #projectNotesTextarea {
+        #projectNotesTextarea, #suggestionTextarea {
             width: 100%;
             flex-grow: 1;
-            min-height: 400px; /* Provides a comfortable editing area */
             padding: 15px;
             border: 1px solid #30363d;
             border-radius: 4px;
@@ -158,6 +171,15 @@
             resize: vertical;
         }
 
+        #projectNotesTextarea {
+            min-height: 400px;
+        }
+
+        #suggestionTextarea {
+            min-height: 200px;
+        }
+
+
         .save-bar {
             display: flex;
             justify-content: flex-end;
@@ -165,7 +187,7 @@
             margin-top: 15px;
         }
 
-        #saveButton {
+        #saveButton, #saveSuggestionButton {
             padding: 10px 20px;
             background-color: #3fb950; /* Green for success/save */
             color: white;
@@ -175,17 +197,25 @@
             font-weight: bold;
             transition: background-color 0.2s;
         }
+        
+        #saveSuggestionButton {
+            background-color: #58a6ff; /* Blue for a secondary save button */
+        }
 
         #saveButton:hover:not(:disabled) {
             background-color: #4dc45e;
         }
+        
+        #saveSuggestionButton:hover:not(:disabled) {
+            background-color: #79a6ff;
+        }
 
-        #saveButton:disabled {
+        #saveButton:disabled, #saveSuggestionButton:disabled {
             background-color: #3f6b45;
             cursor: not-allowed;
         }
 
-        #statusMessage {
+        #statusMessage, #suggestionStatusMessage {
             margin-right: auto;
             color: #8b949e;
             font-size: 0.9em;
@@ -238,6 +268,18 @@
                 </div>
             </div>
 
+            <h1 style="color: #ff9d00;">💡 Questions and Suggestions</h1> 
+
+            <div class="suggestion-container">
+                <textarea id="suggestionTextarea" placeholder="Add any questions, ideas, or suggestions for the project here."></textarea>
+                
+                <div class="save-bar">
+                    <span id="suggestionStatusMessage">Ready for input.</span>
+                    <button id="saveSuggestionButton">Save Suggestions</button>
+                </div>
+            </div>
+
+
             <div class="footer">
                 © Lightweight IT PM — Designed for academic teams
             </div>
@@ -268,11 +310,20 @@
 
         let userId = null;
         const NOTES_DOC_REF = 'projectData/notesDoc'; // The same path used by the dashboard
+        // NEW CONSTANT FOR SUGGESTIONS
+        const SUGGESTION_DOC_REF = 'projectData/suggestionDoc'; 
+
 
         // DOM Elements
         const notesTextarea = document.getElementById('projectNotesTextarea');
         const saveButton = document.getElementById('saveButton');
         const statusMessage = document.getElementById('statusMessage');
+        
+        // NEW DOM Elements
+        const suggestionTextarea = document.getElementById('suggestionTextarea');
+        const saveSuggestionButton = document.getElementById('saveSuggestionButton');
+        const suggestionStatusMessage = document.getElementById('suggestionStatusMessage');
+
 
         // --- AUTHENTICATION & INITIALIZATION ---
         auth.onAuthStateChanged(user => {
@@ -284,6 +335,7 @@
                 document.getElementById('userInitialsDisplay').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
 
                 loadNotes();
+                loadSuggestions(); // Load the new box content
                 
             } else {
                 console.log("No user signed in. Redirecting to login.");
@@ -324,6 +376,33 @@
                 notesTextarea.disabled = false;
             }
         }
+        
+        // NEW FUNCTION: Load the existing suggestions text from Firestore
+        async function loadSuggestions() {
+            if (!userId) return;
+
+            suggestionStatusMessage.textContent = 'Loading suggestions...';
+            suggestionTextarea.disabled = true;
+
+            try {
+                const docRef = db.doc(`users/${userId}/${SUGGESTION_DOC_REF}`);
+                const doc = await docRef.get();
+
+                if (doc.exists && doc.data().text) {
+                    suggestionTextarea.value = doc.data().text;
+                    suggestionStatusMessage.textContent = 'Suggestions loaded. Ready to edit.';
+                } else {
+                    suggestionTextarea.value = '';
+                    suggestionStatusMessage.textContent = 'No suggestions found. Start typing!';
+                }
+            } catch (error) {
+                console.error("Error loading suggestions:", error);
+                suggestionStatusMessage.textContent = 'Error loading suggestions.';
+            } finally {
+                suggestionTextarea.disabled = false;
+            }
+        }
+
 
         // Save the notes text to Firestore
         async function saveNotes() {
@@ -347,11 +426,6 @@
                 }, { merge: true });
 
                 statusMessage.textContent = 'Notes saved successfully!';
-                
-                // Optional: Automatically return to dashboard after successful save
-                // setTimeout(() => {
-                //     window.location.href = 'dashboard.html';
-                // }, 1000); 
 
             } catch (error) {
                 console.error("Error saving notes:", error);
@@ -361,25 +435,62 @@
                 saveButton.textContent = 'Save Notes';
             }
         }
+        
+        // NEW FUNCTION: Save the suggestions text to Firestore
+        async function saveSuggestions() {
+            if (!userId) {
+                alert("User not authenticated.");
+                return;
+            }
+
+            const suggestionText = suggestionTextarea.value.trim();
+            saveSuggestionButton.disabled = true;
+            saveSuggestionButton.textContent = 'Saving...';
+            suggestionStatusMessage.textContent = 'Saving suggestions to cloud...';
+
+            try {
+                const docRef = db.doc(`users/${userId}/${SUGGESTION_DOC_REF}`);
+                
+                // Use set with { merge: true } to create the document if it doesn't exist
+                await docRef.set({
+                    text: suggestionText,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                suggestionStatusMessage.textContent = 'Suggestions saved successfully!';
+
+            } catch (error) {
+                console.error("Error saving suggestions:", error);
+                suggestionStatusMessage.textContent = `Error saving suggestions: ${error.message}`;
+            } finally {
+                saveSuggestionButton.disabled = false;
+                saveSuggestionButton.textContent = 'Save Suggestions';
+            }
+        }
+
 
         // --- EVENT LISTENERS ---
         saveButton.addEventListener('click', saveNotes);
+        saveSuggestionButton.addEventListener('click', saveSuggestions); // New event listener
 
-        // Allow pressing Ctrl+S or Cmd+S to trigger save
+        // Allow pressing Ctrl+S or Cmd+S to trigger save (currently only triggers saveNotes)
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
-                saveNotes();
+                // Consider adding logic here to determine which box to save, or save both.
+                // For simplicity, we'll only save primary notes for the shortcut.
+                saveNotes(); 
             }
         });
 
         // Add a warning for unsaved changes (basic check)
         window.addEventListener('beforeunload', (e) => {
-            // This is a minimal check. For a true check, you'd compare current text
-            // against the last loaded/saved text.
-            if (notesTextarea.value.trim() !== '' && statusMessage.textContent !== 'Notes saved successfully!') {
+            const notesUnsaved = notesTextarea.value.trim() !== '' && statusMessage.textContent !== 'Notes saved successfully!';
+            const suggestionUnsaved = suggestionTextarea.value.trim() !== '' && suggestionStatusMessage.textContent !== 'Suggestions saved successfully!';
+            
+            if (notesUnsaved || suggestionUnsaved) {
                  e.preventDefault();
-                 e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                 e.returnValue = 'You have unsaved changes in your notes or suggestions. Are you sure you want to leave?';
             }
         });
     </script>
